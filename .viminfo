@@ -1,0 +1,94 @@
+# 这个 viminfo 文件是由 Vim 7.3 所产生。
+# 如果想要自行修改请特别小心！
+
+# 文件被写的时候 ‘encoding’ 的值
+*encoding=utf-8
+
+
+# hlsearch on (H) or off (h):
+~h
+# 上个 替换 Search 图案：
+~MSle0~&\r
+
+# 最后替换的字符串
+$
+
+# 命令行 历史记录 (从新到旧)：
+:wq
+:%s/\r//g
+:q
+
+# 查找字符串 历史记录 (从新到旧)：
+? \r
+
+# 表达式 历史记录 (从新到旧)：
+
+# 输入行 历史记录 (从新到旧)：
+
+# 输入行 历史记录 (从新到旧)：
+
+# 寄存器:
+
+# 文件标记:
+'0  107  0  ~/.bashrc
+'1  56  0  ~/14231014-lab/lib/printf.c
+'2  1  0  ~/14231014-lab/init/main.c
+'3  1  0  ~/14231014-lab/include/asm-mips3k/asm.h
+'4  1  0  ~/14231014-lab/include/printf.h
+
+# 跳转列表 (从新到旧):
+-'  107  0  ~/.bashrc
+-'  1  0  ~/.bashrc
+-'  56  0  ~/14231014-lab/lib/printf.c
+-'  1  1  ~/14231014-lab/lib/printf.c
+-'  1  0  ~/14231014-lab/init/main.c
+-'  1  0  ~/14231014-lab/include/asm-mips3k/asm.h
+-'  1  0  ~/14231014-lab/include/printf.h
+-'  1  0  ~/14231014-lab/include/printf.h
+-'  1  0  ~/14231014-lab/include/asm-mips3k/asm.h
+-'  1  0  ~/14231014-lab/include/printf.h
+-'  1  0  ~/14231014-lab/include/printf.h
+-'  1  0  ~/14231014-lab/init/main.c
+-'  1  0  ~/14231014-lab/include/asm-mips3k/asm.h
+-'  1  0  ~/14231014-lab/include/printf.h
+-'  1  0  ~/14231014-lab/include/printf.h
+-'  1  0  ~/14231014-lab/include/asm-mips3k/asm.h
+-'  1  0  ~/14231014-lab/include/printf.h
+-'  1  0  ~/14231014-lab/include/printf.h
+-'  56  0  ~/14231014-lab/lib/printf.c
+-'  1  1  ~/14231014-lab/lib/printf.c
+-'  1  0  ~/14231014-lab/init/main.c
+-'  1  0  ~/14231014-lab/include/asm-mips3k/asm.h
+-'  1  0  ~/14231014-lab/include/printf.h
+-'  1  0  ~/14231014-lab/include/printf.h
+-'  1  0  ~/14231014-lab/include/asm-mips3k/asm.h
+-'  1  0  ~/14231014-lab/include/printf.h
+-'  1  0  ~/14231014-lab/include/printf.h
+-'  1  0  ~/14231014-lab/init/main.c
+-'  1  0  ~/14231014-lab/include/asm-mips3k/asm.h
+-'  1  0  ~/14231014-lab/include/printf.h
+-'  1  0  ~/14231014-lab/include/printf.h
+-'  1  0  ~/14231014-lab/include/asm-mips3k/asm.h
+-'  1  0  ~/14231014-lab/include/printf.h
+-'  1  0  ~/14231014-lab/include/printf.h
+
+# 文件内的标记历史记录 (从新到旧):
+
+> ~/.bashrc
+	"	107	0
+
+> ~/14231014-lab/lib/printf.c
+	"	56	0
+	^	56	1
+	.	43	4
+	+	43	4
+	+	43	4
+
+> ~/14231014-lab/init/main.c
+	"	1	0
+
+> ~/14231014-lab/include/asm-mips3k/asm.h
+	"	1	0
+
+> ~/14231014-lab/include/printf.h
+	"	1	0

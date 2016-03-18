@@ -40,7 +40,8 @@ void printf(char *fmt, ...)
     va_end(ap);
 }
 
-void _panic(const char *file, int line, const char *fmt,...)
+void
+_panic(const char *file, int line, const char *fmt,...)
 {
 	va_list ap;
 
