@@ -19,23 +19,25 @@ void printcharc(char ch);
 
 void halt(void);
 
-static void myoutput(void *arg, char *s, int l)
+static void myoutput(void *arg, char *s, int l) //这个*arg干啥的？？
 {
-    int i;
+  int i;
 
-    // special termination call
-    if ((l==1) && (s[0] == '\0')) return;
-    
-    for (i=0; i< l; i++) {
-	printcharc(s[i]);
-	if (s[i] == '\n') printcharc('\n');
-    }
+  // special termination call
+  if ((l==1) && (s[0] == '\0'))
+    return;
+
+  for (i=0; i< l; i++) {
+    printcharc(s[i]);
+    if (s[i] == '\n')
+      printcharc('\n');
+  }
 }
 
 void printf(char *fmt, ...)
 {
     va_list ap;
-    va_start(ap, fmt);
+    va_start(ap, fmt);  //va_start是个宏，所以可以修改ap
     lp_Print(myoutput, 0, fmt, ap);
     va_end(ap);
 }
