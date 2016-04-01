@@ -2,37 +2,39 @@
 #include <asm/cp0regdef.h>
 #include <asm/asm.h>
 
-	.section .data.stk
+
+			.section .data.stk
 KERNEL_STACK:
-	.space 0x8000
+			.space 0x8000
 
-	.text
 
-LEAF(_start)						/*在asm.h中定义的叶子函数，叶子函数不调用其它函数*/
+			.text
+LEAF(_start)           /*在asm.h中定义的叶子函数，叶子函数不调用其它函数*/
 
-	.set	mips2      			/*.set用于指导汇编器如何工作，控制指令执行顺序*/
+	.set	mips2      /*.set用于指导汇编器如何工作，控制指令执行顺序*/
 	.set	reorder
 
 	/* Disable interrupts */
 	mtc0	zero, CP0_STATUS
 
-  /* Disable watch exception. */
-  mtc0  zero, CP0_WATCHLO
-  mtc0  zero, CP0_WATCHHI
+        /* Disable watch exception. */
+        mtc0    zero, CP0_WATCHLO
+        mtc0    zero, CP0_WATCHHI
 
 	/* disable kernel mode cache */
 	mfc0	t0, CP0_CONFIG
-	and		t0, ~0x7
-	ori		t0, 0x2
+	and	t0, ~0x7
+	ori	t0, 0x2
 	mtc0	t0, CP0_CONFIG
 
-	/* set up stack */
-	li	sp, 0x80400000
+/**
+ * set up stack
+ */
+li	sp, 0x80400000
 
-	/* jump and link to main function */
-	jal main
+jal main
 
-	loop:
-		j	loop
-		nop
+loop:
+	j	loop
+	nop
 END(_start)           	/*在asm.h中定义的函数*/
