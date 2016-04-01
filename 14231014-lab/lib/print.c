@@ -58,6 +58,8 @@ lp_Print(
 
   int length;
 
+	int i; //循环变量。
+
   for(;;)
   {
 		{
@@ -182,6 +184,32 @@ lp_Print(
 		    OUTPUT(arg, buf, length);
 		    break;
 
+		 case 't':
+		 		if (longFlag){
+					num = va_arg(ap, long int);
+				} else {
+					num = va_arg(ap, int);
+				}
+				length = PrintNum(buf, num, 11, 0, width, ladjust, padc, 0);
+				for (i = 0; buf[i]!='\0'; i++)
+					if (buf[i]=='a')
+						buf[i]='x';
+				OUTPUT(arg, buf, length);
+				break;
+
+			case 'T':
+				if (longFlag){
+				 num = va_arg(ap, long int);
+				} else {
+				 num = va_arg(ap, int);
+				}
+				length = PrintNum(buf, num, 11, 0, width, ladjust, padc, 0);
+				for (i = 0; buf[i]!='\0'; i++)
+					if (buf[i]=='a')
+						buf[i]='X';
+				OUTPUT(arg, buf, length);
+				break;
+
 		 case 'x':
 		    if (longFlag) {
 					num = va_arg(ap, long int);
@@ -271,35 +299,35 @@ int
 PrintNum(char * buf, unsigned long u, int base, int negFlag,
 	 int length, int ladjust, char padc, int upcase)
 {
-    /* algorithm :
-     *  1. prints the number from left to right in reverse form.
-     *  2. fill the remaining spaces with padc if length is longer than
-     *     the actual length
-     *     TRICKY : if left adjusted, no "0" padding.
-     *		    if negtive, insert  "0" padding between "0" and number.
-     *  3. if (!ladjust) we reverse the whole string including paddings
-     *  4. otherwise we only reverse the actual string representing the num.
-     */
+	/* algorithm :
+	 *  1. prints the number from left to right in reverse form.
+	 *  2. fill the remaining spaces with padc if length is longer than
+	 *     the actual length
+	 *     TRICKY : if left adjusted, no "0" padding.
+	 *		    if negtive, insert  "0" padding between "0" and number.
+	 *  3. if (!ladjust) we reverse the whole string including paddings
+	 *  4. otherwise we only reverse the actual string representing the num.
+	 */
 
-    int actualLength =0;
-    char *p = buf;
-    int i;
+  int actualLength =0;
+  char *p = buf;
+  int i;
 
-    do {
-	int tmp = u %base;
-	if (tmp <= 9) {
-	    *p++ = '0' + tmp;
-	} else if (upcase) {
-	    *p++ = 'A' + tmp - 10;
-	} else {
-	    *p++ = 'a' + tmp - 10;
+  do {
+		int tmp = u %base;
+		if (tmp <= 9) {
+		    *p++ = '0' + tmp;
+		} else if (upcase) {
+		    *p++ = 'A' + tmp - 10;
+		} else {
+		    *p++ = 'a' + tmp - 10;
+		}
+		u /= base;
+	} while (u != 0);
+
+	if (negFlag) {
+		*p++ = '-';
 	}
-	u /= base;
-    } while (u != 0);
-
-    if (negFlag) {
-	*p++ = '-';
-    }
 
     /* figure out actual length and adjust the maximum length */
     actualLength = p - buf;
