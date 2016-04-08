@@ -7,8 +7,8 @@
 #include "printf.h"
 
 
-LIST_HEAD(Page_list, Page);
-typedef LIST_ENTRY(Page) Page_LIST_entry_t;
+LIST_HEAD(Page_list, Page);	//居然用宏来定义结构体类型！服！
+typedef LIST_ENTRY(Page) Page_LIST_entry_t; //是个含有双向链表指针的结构体类型
 
 struct Page {
 	Page_LIST_entry_t pp_link;	/* free list link */

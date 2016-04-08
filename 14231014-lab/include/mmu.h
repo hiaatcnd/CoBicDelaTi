@@ -143,13 +143,13 @@ typedef u_long Pte;
 extern volatile Pte *vpt[];
 extern volatile Pde *vpd[];
 
-// translates from kernel virtual address to physical address.
-#define PADDR(kva)						\
-	({								\
-		u_long a = (u_long) (kva);				\
-		if (a < ULIM)					\
-			panic("PADDR called with invalid kva %08lx", a);\
-		a - ULIM;						\
+// translates from kernel virtual address to physical address. 其实就是把最高位置成0嘛
+#define PADDR(kva)																						\
+	({																													\
+		u_long a = (u_long) (kva);																\
+		if (a < ULIM)																							\
+			panic("PADDR called with invalid kva %08lx", a);				\
+		a - ULIM;																									\
 	})
 
 // translates from physical address to kernel virtual address.

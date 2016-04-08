@@ -40,9 +40,9 @@
  * linked so that an arbitrary element can be removed without traversing the list.  New
  * elements can be added to the list after an existing element or at the head of the list.
  * A LIST_HEAD structure is declared as follows:
- * 
+ *
  *       LIST_HEAD(HEADNAME, TYPE) head;
- * 
+ *
  * where HEADNAME is the name of the structure to be defined, and TYPE is the type of the
  * elements to be linked into the list.
  */
@@ -69,6 +69,9 @@
 #define	LIST_ENTRY(type)						\
 	struct {								\
 		struct type *le_next;	/* next element */			\
+		/*le_prev其实是前一个的field中le_next的地址，所以是二重指针（但这样做的意义是什么呢，为什么不直接用一重指针呢）*/ \
+		/*Re: 发现le_prev存的是自身的前一项指向自身的指针的地址，这样的好处是不用区分head和节点，还真tm机智……不过我更喜欢带头节点的链表，*/ \
+		/*		这样即使做成双向链表也很方便，现在这样感觉十分残……*/
 		struct type **le_prev;	/* address of previous next element */	\
 	}
 
@@ -108,12 +111,12 @@
  * already in the list.  The "field" name is the link element
  * as above.
  */
-#define	LIST_INSERT_AFTER(listelm, elm, field) do {			\
-		if ((LIST_NEXT((elm), field) = LIST_NEXT((listelm), field)) != NULL)\
-			LIST_NEXT((listelm), field)->field.le_prev =		\
-					&LIST_NEXT((elm), field);				\
-		LIST_NEXT((listelm), field) = (elm);				\
-		(elm)->field.le_prev = &LIST_NEXT((listelm), field);		\
+#define	LIST_INSERT_AFTER(listelm, elm, field) do {												\
+		if ((LIST_NEXT((elm), field) = LIST_NEXT((listelm), field)) != NULL)	\
+			LIST_NEXT((listelm), field)->field.le_prev =												\
+					&LIST_NEXT((elm), field);																				\
+		LIST_NEXT((listelm), field) = (elm);																	\
+		(elm)->field.le_prev = &LIST_NEXT((listelm), field);									\
 	} while (0)
 
 /*

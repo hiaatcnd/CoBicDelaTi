@@ -27,184 +27,207 @@ static const char theFatalMsg[] = "fatal error in lp_Print!";
  * A low level printf() function.
  */
 void
-lp_Print(void (*output)(void *, char *, int), 
-	 void * arg,
-	 char *fmt, 
-	 va_list ap)
+lp_Print(
+					void (*output)(void *, char *, int),  //用来输出的函数的指针
+					void * arg, 	//printf的时候arg传进来个0
+					char *fmt, 		//fmt是格式字符串
+					va_list ap		//用于处理变长参数
+				)
 {
+	/* 给定一个字符串s（其实是字符指针）和长度l，将其输出 */
+	#define 	OUTPUT(arg, s, l)  \
+	  { if (((l) < 0) || ((l) > LP_MAX_BUF)) { \
+	       (*output)(arg, (char*)theFatalMsg, sizeof(theFatalMsg)-1); for(;;); \
+	    } else { \
+	      (*output)(arg, s, l); \
+	    } \
+	  }
 
-#define 	OUTPUT(arg, s, l)  \
-  { if (((l) < 0) || ((l) > LP_MAX_BUF)) { \
-       (*output)(arg, (char*)theFatalMsg, sizeof(theFatalMsg)-1); for(;;); \
-    } else { \
-      (*output)(arg, s, l); \
-    } \
-  }
-    
-    char buf[LP_MAX_BUF];
+  char buf[LP_MAX_BUF];
 
-    char c;
-    char *s;
-    long int num;
+  char c;
+  char *s;
+  long int num;
 
-    int longFlag;
-    int negFlag;
-    int width;
-    int prec;
-    int ladjust;
-    char padc;
+  int longFlag; //是long型吗？
+  int negFlag;	//是负数吗？
+  int width;		//输出的宽度
+  int prec;			//精度
+  int ladjust;	//左对齐标志
+  char padc;		//如果输出的长度比实际的长度长，那么用padc来占位
 
-    int length;
+  int length;
 
-    for(;;) {
-	{ 
-	    /* scan for the next '%' */
-	    char *fmtStart = fmt;
-	    while ( (*fmt != '\0') && (*fmt != '%')) {
-		fmt ++;
-	    }
-
-	    /* flush the string found so far */
-	    OUTPUT(arg, fmtStart, fmt-fmtStart);
-
-	    /* are we hitting the end? */
-	    if (*fmt == '\0') break;
-	}
-
-	/* we found a '%' */
-	fmt ++;
-	
-	/* check for long */
-	if (*fmt == 'l') {
-	    longFlag = 1;
-	    fmt ++;
-	} else {
-	    longFlag = 0;
-	}
-
-	/* check for other prefixes */
-	width = 0;
-	prec = -1;
-	ladjust = 0;
-	padc = ' ';
-
-	if (*fmt == '-') {
-	    ladjust = 1;
-	    fmt ++;
-	}
-
-	if (*fmt == '0') {
-	    padc = '0';
-	    fmt++;
-	}
-
-	if (IsDigit(*fmt)) {
-	    while (IsDigit(*fmt)) {
-		width = 10 * width + Ctod(*fmt++);
-	    }
-	}
-
-	if (*fmt == '.') {
-	    fmt ++;
-	    if (IsDigit(*fmt)) {
-		prec = 0;
-		while (IsDigit(*fmt)) {
-		    prec = prec*10 + Ctod(*fmt++);
+  for(;;)
+  {
+		{
+		    /* scan for the next '%' */
+				while (*fmt != '%' && *fmt != '\0')
+				{
+					/* flush the string found so far */
+					OUTPUT(arg, fmt, 1)
+					fmt++;
+				}
+		    /* are we hitting the end? */
+				if (*fmt=='\0')
+					break;
 		}
-	    }
-	}
+
+		/* we found a '%' */
+		fmt++;
+
+		/* check for other prefixes */
+		//判断flag位
+		if (*fmt == '-') {
+			ladjust = 1;
+			fmt++;
+		}
+		else
+		{
+			ladjust = 0;
+			if (*fmt == '0')
+			{
+				padc = '0';
+				fmt++;
+			}
+			else if (*fmt == ' ')
+			{
+				padc = ' ';
+				fmt++;
+			}
+			else
+				padc = ' '; //默认情况下用这个
+		}
+
+		//判断宽度
+		width = 0;
+		while ( IsDigit( *fmt ) )
+		{
+			width = (width*10+ Ctod( *fmt ) );
+			*fmt++;
+		}
+
+		//判断精度，不过由于没有浮点数，所以没啥用
+		prec = 6; //默认情况下如果没有小数点，就是6位精度
+		if (*fmt == '.')
+		{
+			prec = 0; //如果只有小数点，或者小数点后面的东西不合法，就是0位精度
+			fmt++;
+			while( IsDigit( *fmt ) )
+			{
+				prec = prec*10+ Ctod( *fmt );
+				fmt++;
+			}
+		}
+
+		/**
+		 * 这里我感觉模板程序有问题，check for long 应该放在后面（也就是这里），而不是最前面
+		*/
+		/* check for long */
+		if (*fmt == 'l') {
+			longFlag = 1;
+			fmt++;
+		}
+		else
+			longFlag = 0;
 
 
-	/* check format flag */
-	negFlag = 0;
-	switch (*fmt) {
-	 case 'b':
-	    if (longFlag) { 
-		num = va_arg(ap, long int); 
-	    } else { 
-		num = va_arg(ap, int);
-	    }
-	    length = PrintNum(buf, num, 2, 0, width, ladjust, padc, 0);
-	    OUTPUT(arg, buf, length);
-	    break;
+		/* check format flag */
+		negFlag = 0;
+		switch (*fmt) {
+			case 'b':
+				if (longFlag) {
+					num = va_arg(ap, long int);
+		    } else {
+					num = va_arg(ap, int);
+		    }
+		    length = PrintNum(buf, num, 2, 0, width, ladjust, padc, 0);
+		    OUTPUT(arg, buf, length);
+		    break;
 
-	 case 'd':
-	 case 'D':
-	    if (longFlag) { 
-		num = va_arg(ap, long int);
-	    } else { 
-		num = va_arg(ap, int); 
-	    }
-	    if (num < 0) {
-		num = - num;
-		negFlag = 1;
-	    }
-	    length = PrintNum(buf, num, 10, negFlag, width, ladjust, padc, 0);
-	    OUTPUT(arg, buf, length);
-	    break;
+			case 'd':
+			case 'D':
+		 		if (longFlag) {
+					num = va_arg(ap, long int);
+		    } else {
+					num = va_arg(ap, int);
+		    }
+		    if (num < 0) {
+					num = - num;
+					negFlag = 1;
+		    }
+		    length = PrintNum(buf, num, 10, negFlag, width, ladjust, padc, 0);
+		    OUTPUT(arg, buf, length);
+		    break;
 
-	 case 'o':
-	 case 'O':
-	//v?????????????????
+			case 'o':
+			case 'O':
+		    if (longFlag) {
+					num = va_arg(ap, long int);
+		    } else {
+					num = va_arg(ap, int);
+		    }
+		    length = PrintNum(buf, num, 8, 0, width, ladjust, padc, 0);
+		    OUTPUT(arg, buf, length);
+		    break;
 
-	//A?????????????????
-	 case 'u':
-	 case 'U':
-	    if (longFlag) { 
-		num = va_arg(ap, long int);
-	    } else { 
-		num = va_arg(ap, int); 
-	    }
-	    length = PrintNum(buf, num, 10, 0, width, ladjust, padc, 0);
-	    OUTPUT(arg, buf, length);
-	    break;
-	    
-	 case 'x':
-	    if (longFlag) { 
-		num = va_arg(ap, long int);
-	    } else { 
-		num = va_arg(ap, int); 
-	    }
-	    length = PrintNum(buf, num, 16, 0, width, ladjust, padc, 0);
-	    OUTPUT(arg, buf, length);
-	    break;
+		 case 'u':
+		 case 'U':
+		    if (longFlag) {
+					num = va_arg(ap, long int);
+		    } else {
+					num = va_arg(ap, int);
+		    }
+		    length = PrintNum(buf, num, 10, 0, width, ladjust, padc, 0);
+		    OUTPUT(arg, buf, length);
+		    break;
 
-	 case 'X':
-	    if (longFlag) { 
-		num = va_arg(ap, long int);
-	    } else { 
-		num = va_arg(ap, int); 
-	    }
-	    length = PrintNum(buf, num, 16, 0, width, ladjust, padc, 1);
-	    OUTPUT(arg, buf, length);
-	    break;
+		 case 'x':
+		    if (longFlag) {
+					num = va_arg(ap, long int);
+		    } else {
+					num = va_arg(ap, int);
+		    }
+		    length = PrintNum(buf, num, 16, 0, width, ladjust, padc, 0);
+		    OUTPUT(arg, buf, length);
+		    break;
 
-	 case 'c':
-	    c = (char)va_arg(ap, int);
-	    length = PrintChar(buf, c, width, ladjust);
-	    OUTPUT(arg, buf, length);
-	    break;
+		 case 'X':
+		    if (longFlag) {
+					num = va_arg(ap, long int);
+		    } else {
+					num = va_arg(ap, int);
+		    }
+		    length = PrintNum(buf, num, 16, 0, width, ladjust, padc, 1);
+		    OUTPUT(arg, buf, length);
+		    break;
 
-	 case 's':
-	    s = (char*)va_arg(ap, char *);
-	    length = PrintString(buf, s, width, ladjust);
-	    OUTPUT(arg, buf, length);
-	    break;
+		 case 'c':
+		    c = (char)va_arg(ap, int);
+		    length = PrintChar(buf, c, width, ladjust);
+		    OUTPUT(arg, buf, length);
+		    break;
 
-	 case '\0':
-	    fmt --;
-	    break;
+		 case 's':
+		    s = (char*)va_arg(ap, char *);
+		    length = PrintString(buf, s, width, ladjust);
+		    OUTPUT(arg, buf, length);
+		    break;
 
-	 default:
-	    /* output this char as it is */
-	    OUTPUT(arg, fmt, 1);
-	}	/* switch (*fmt) */
+		 case '\0':
+		    fmt --;
+		    break;
 
-	fmt ++;
-    }		/* for(;;) */
+		 default:
+		    /* output this char as it is */
+		    OUTPUT(arg, fmt, 1);
+		}	/* switch (*fmt) */
 
-    /* special termination call */
-    OUTPUT(arg, "\0", 1);
+		fmt ++;
+	}		/* for(;;) */
+
+  /* special termination call */
+  OUTPUT(arg, "\0", 1);
 }
 
 
@@ -213,7 +236,7 @@ int
 PrintChar(char * buf, char c, int length, int ladjust)
 {
     int i;
-    
+
     if (length < 1) length = 1;
     if (ladjust) {
 	*buf = c;
@@ -245,7 +268,7 @@ PrintString(char * buf, char* s, int length, int ladjust)
 }
 
 int
-PrintNum(char * buf, unsigned long u, int base, int negFlag, 
+PrintNum(char * buf, unsigned long u, int base, int negFlag,
 	 int length, int ladjust, char padc, int upcase)
 {
     /* algorithm :
@@ -283,16 +306,17 @@ PrintNum(char * buf, unsigned long u, int base, int negFlag,
     if (length < actualLength) length = actualLength;
 
     /* add padding */
-    if (ladjust) {
-	padc = ' ';
-    }
+    if (ladjust)
+			padc = ' ';
     if (negFlag && !ladjust && (padc == '0')) {
-	for (i = actualLength-1; i< length-1; i++) buf[i] = padc;
-	buf[length -1] = '-';
+			for (i = actualLength-1; i< length-1; i++)
+				buf[i] = padc;
+			buf[length -1] = '-';
     } else {
-	for (i = actualLength; i< length; i++) buf[i] = padc;
+			for (i = actualLength; i< length; i++)
+				buf[i] = padc;
     }
-	    
+
 
     /* prepare to reverse the string */
     {
