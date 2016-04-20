@@ -22,3 +22,11 @@ page_remove	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/mm/pmap.
 tlb_invalidate	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/mm/pmap.c	/^tlb_invalidate(Pde *pgdir, u_long va)$/;"	function	line:392	signature:(Pde *pgdir, u_long va)
 page_check	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/mm/pmap.c	/^page_check(void)$/;"	function	line:403	signature:(void)
 pageout	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/mm/pmap.c	/^void pageout(int va, int context)$/;"	function	line:513	signature:(int va, int context)
+IsDigit	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/lib/print.c	/^#define		IsDigit(/;"	macro	line:15	file:
+Ctod	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/lib/print.c	/^#define		Ctod(/;"	macro	line:16	file:
+theFatalMsg	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/lib/print.c	/^static const char theFatalMsg[] = "fatal error in lp_Print!";$/;"	variable	line:24	file:
+lp_Print	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/lib/print.c	/^lp_Print($/;"	function	line:30	signature:( void (*output)(void *, char *, int), void * arg, char *fmt, va_list ap )
+OUTPUT	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/lib/print.c	/^	#define 	OUTPUT(/;"	macro	line:38	file:
+PrintChar	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/lib/print.c	/^PrintChar(char * buf, char c, int length, int ladjust)$/;"	function	line:236	signature:(char * buf, char c, int length, int ladjust)
+PrintString	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/lib/print.c	/^PrintString(char * buf, char* s, int length, int ladjust)$/;"	function	line:252	signature:(char * buf, char* s, int length, int ladjust)
+PrintNum	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/lib/print.c	/^PrintNum(char * buf, unsigned long u, int base, int negFlag,$/;"	function	line:271	signature:(char * buf, unsigned long u, int base, int negFlag, int length, int ladjust, char padc, int upcase)

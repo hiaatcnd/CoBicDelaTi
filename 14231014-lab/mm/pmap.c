@@ -5,17 +5,16 @@
 #include "error.h"
 
 
-
 /* These variables are set by mips_detect_memory() */
 u_long maxpa;            /* Maximum physical address */
 u_long npage;            /* Amount of memory(in pages) */
 u_long basemem;          /* Amount of base memory(in bytes) */
 u_long extmem;           /* Amount of extended memory(in bytes) */
 
-Pde *boot_pgdir;
+Pde *boot_pgdir; //Pde是u_long
 
-struct Page *pages;
-static u_long freemem;
+struct Page *pages; //Page用来存储物理页框信息。注意pages既能当数组也能当链表有木有
+static u_long freemem;//freemem指向尚未分配的空间的头部
 
 static struct Page_list page_free_list;	/* Free list of physical pages */
 
@@ -25,14 +24,14 @@ static struct Page_list page_free_list;	/* Free list of physical pages */
  	Set basemem to be 64MB, and calculate corresponding npage value.*/
 void mips_detect_memory()
 {
-    /* Step 1: Initialize basemem.
-     * (When use real computer, CMOS tells us how many kilobytes there are). */
+  /* Step 1: Initialize basemem.
+   * (When use real computer, CMOS tells us how many kilobytes there are). */
+  maxpa = basemem = 67108864;
+  // Step 2: Calculate corresponding npage value.
+  npage = 16384;
 
-    // Step 2: Calculate corresponding npage value.
-
-    printf("Physical memory: %dK available, ", (int)(maxpa / 1024));
-    printf("base = %dK, extended = %dK\n", (int)(basemem / 1024),
-           (int)(extmem / 1024));
+  printf("Physical memory: %dK available, ", (int)(maxpa / 1024));
+  printf("base = %dK, extended = %dK\n", (int)(basemem / 1024), (int)(extmem / 1024));
 }
 
 /* Overview:
@@ -44,37 +43,45 @@ void mips_detect_memory()
 	If we're out of memory, should panic, else return this address of memory we have allocated.*/
 static void *alloc(u_int n, u_int align, int clear)
 {
-    extern char end[];
-    u_long alloced_mem;
+  //printf("AlephDebug: =======alloc called=======\n");
+  extern char end[];
 
-    /* Initialize `freemem` if this is the first time. The first virtual address that the
-     * linker did *not* assign to any kernel code or global variables. */
-    if (freemem == 0) {
-        freemem = (u_long)end;
-    }
+  /*AlephDebug*/
+  //printf("AlephDebug: end = %08lx\n", (u_long)end );
 
-    /* Step 1: Round up `freemem` up to be aligned properly */
-    freemem = ROUND(freemem, align);
+  u_long alloced_mem;
 
-    /* Step 2: Save current value of `freemem` as allocated chunk. */
-    alloced_mem = freemem;
+  /* Initialize `freemem` if this is the first time. The first virtual address that the
+   * linker did *not* assign to any kernel code or global variables. */
+  if (freemem == 0) {
+    freemem = (u_long)end;
+  }
 
-    /* Step 3: Increase `freemem` to record allocation. */
-    freemem = freemem + n;
+  //freemem指向尚未分配的空间的头部
 
-    /* Step 4: Clear allocated chunk if parameter `clear` is set. */
-    if (clear) {
-        bzero((void *)alloced_mem, n);
-    }
+  /* Step 1: Round up `freemem` up to be aligned properly */
+  freemem = ROUND(freemem, align);//以align为模向上取整，align必须为2的n次方
 
-    // We're out of memory, PANIC !!
-    if (PADDR(freemem) >= maxpa) {
-        panic("out of memorty\n");
-        return (void *)-E_NO_MEM;
-    }
+  /* Step 2: Save current value of `freemem` as allocated chunk. */
+  alloced_mem = freemem;
 
-    /* Step 5: return allocated chunk. */
-    return (void *)alloced_mem;
+  /* Step 3: Increase `freemem` to record allocation. */
+  freemem = freemem + n;
+
+  /* Step 4: Clear allocated chunk if parameter `clear` is set. */
+  if (clear) {
+    bzero((void *)alloced_mem, n);
+  }
+
+  // We're out of memory, PANIC !!
+  if (PADDR(freemem) >= maxpa) {
+    panic("out of memorty\n");
+    return (void *)-E_NO_MEM;
+  }
+
+  /* Step 5: return allocated chunk. */
+  //printf("AlephDebug: alloced_mem = %08lx\n", (u_long)alloced_mem );
+  return (void *)alloced_mem;
 }
 
 /* Overview:
@@ -84,23 +91,39 @@ static void *alloc(u_int n, u_int align, int clear)
 	then create it.*/
 static Pte *boot_pgdir_walk(Pde *pgdir, u_long va, int create)
 {
+  //printf("AlephDebug: =======boot_pgdir_walk called=======\n");
+  //printf("AlephDebug: pgdir = %08lx\n",pgdir);
+  //printf("AlephDebug: va = %08lx\n",va);
+  //printf("AlephDebug: create = %d\n",create);
+  Pde *pgdir_entryp;
+  Pte *pgtable, *pgtable_entry;
 
-    Pde *pgdir_entryp;
-    Pte *pgtable, *pgtable_entry;
+  /* Step 1: Get the corresponding page directory entry and page table. */
+  /* Hint: Use KADDR and PTE_ADDR to get the page table from page directory
+   * entry value. */
+  pgdir_entryp = pgdir+PDX(va);
+  //printf("AlephDebug: pgdir_entryp = %08lx  va = %08lx\n", pgdir_entryp, va );
 
-    /* Step 1: Get the corresponding page directory entry and page table. */
-    /* Hint: Use KADDR and PTE_ADDR to get the page table from page directory
-     * entry value. */
+  /* Step 2: If the corresponding page table is not exist and parameter `create`
+   * is set, create one. And set the correct permission bits for this new page
+   * table. */
+  if( !(*pgdir_entryp & PTE_V) && (create) )
+  {
+    //printf("AlephDebug: page table is not exist\n");
+    pgtable = alloc(BY2PG, BY2PG, 1);
+    *pgdir_entryp = PADDR(pgtable) | PTE_V;
+    //printf("AlephDebug: *pgdir_entryp = %08lx\n", *pgdir_entryp );
+  }
+  else if( !(*pgdir_entryp & PTE_V) )
+  {
+    return 0;
+  }
 
-
-    /* Step 2: If the corresponding page table is not exist and parameter `create`
-     * is set, create one. And set the correct permission bits for this new page
-     * table. */
-
-
-    /* Step 3: Get the page table entry for `va`, and return it. */
-
-
+  /* Step 3: Get the page table entry for `va`, and return it. */
+  pgtable_entry = pgtable + PTX(va);
+  //printf("AlephDebug: pgtable = %08lx\n", pgtable );
+  //printf("AlephDebug: pgtable_entry = %08lx\n", pgtable_entry );
+  return pgtable_entry;
 }
 
 /*Overview:
@@ -113,22 +136,26 @@ static Pte *boot_pgdir_walk(Pde *pgdir, u_long va, int create)
 	Size is a multiple of BY2PG.*/
 void boot_map_segment(Pde *pgdir, u_long va, u_long size, u_long pa, int perm)
 {
-    int i, va_temp;
-    Pte *pgtable_entry;
+  //printf("AlephDebug: =======boot_map_segment called=======\n");
+  int i, va_temp;
+  Pte *pgtable_entry;
 
-    /* Step 1: Check if `size` is a multiple of BY2PG. */
+  /* Step 1: Check if `size` is a multiple of BY2PG. */
+  assert( size % BY2PG ==0);
 
-
-    /* Step 2: Map virtual address space to physical address. */
-    /* Hint: Use `boot_pgdir_walk` to get the page table entry of virtual address `va`. */
-
-
+  /* Step 2: Map virtual address space to physical address. */
+  /* Hint: Use `boot_pgdir_walk` to get the page table entry of virtual address `va`. */
+  for (i = 0; i < size; i+=BY2PG) 
+  {
+    pgtable_entry = boot_pgdir_walk(pgdir, va + i, 1);
+    *pgtable_entry = (pa + i) | perm | PTE_V;
+  }
 }
 
 /* Overview:
     Set up two-level page table.
 
-   Hint:  
+   Hint:
     You can get more details about `UPAGES` and `UENVS` in include/mmu.h. */
 void mips_vm_init()
 {
@@ -136,11 +163,13 @@ void mips_vm_init()
     extern int mCONTEXT;
     extern struct Env *envs;
 
-    Pde *pgdir;
+    Pde *pgdir; //Pde是u_long的别名。pgdir是个虚拟地址。
     u_int n;
 
     /* Step 1: Allocate a page for page directory(first level page table). */
-    pgdir = alloc(BY2PG, BY2PG, 1);
+    pgdir = alloc(BY2PG, BY2PG, 1); //给页表分配一页
+    //printf("AlephDebug: pgdir = alloc(BY2PG, BY2PG, 1): = %08lx\n", pgdir );
+
     printf("to memory %x for struct page directory.\n", freemem);
     mCONTEXT = (int)pgdir;
 
@@ -150,15 +179,18 @@ void mips_vm_init()
      * for physical memory management. Then, map virtual address `UPAGES` to
      * physical address `pages` allocated before. For consideration of alignment,
      * you should round up the memory size before map. */
-    pages = (struct Page *)alloc(npage * sizeof(struct Page), BY2PG, 1);
+    pages = (struct Page *)alloc(npage * sizeof(struct Page), BY2PG, 1); //给页面控制块分配内存
     printf("to memory %x for struct Pages.\n", freemem);
-    n = ROUND(npage * sizeof(struct Page), BY2PG);
-    boot_map_segment(pgdir, UPAGES, n, PADDR(pages), PTE_R);
+    n = ROUND(npage * sizeof(struct Page), BY2PG);//记录一下内存控制块的总大小，并按页对齐
+    //printf("AlephDebug: npage * sizeof(struct Page) = %08lx\n", npage * sizeof(struct Page));
+    //printf("AlephDebug: n = %d\n", n);
+    boot_map_segment(pgdir, UPAGES, n, PADDR(pages), PTE_R);//把UPAGES映射到页面控制块。
 
     /* Step 3, Allocate proper size of physical memory for global array `envs`,
      * for process management. Then map the physical address to `UENVS`. */
     envs = (struct Env *)alloc(NENV * sizeof(struct Env), BY2PG, 1);
     n = ROUND(NENV * sizeof(struct Env), BY2PG);
+    //printf("AlephDebug: n = %d\n", n);
     boot_map_segment(pgdir, UENVS, n, PADDR(envs), PTE_R);
 
     printf("pmap.c:\t mips vm init success\n");
@@ -173,18 +205,43 @@ void mips_vm_init()
 void
 page_init(void)
 {
-    /* Step 1: Initialize page_free_list. */
-    /* Hint: Use macro `LIST_INIT` defined in include/queue.h. */
+  int i;
+  u_long used_pages = PADDR(freemem) / BY2PG ; //记录一下freemem下面总共有多少页（需要被标记为已用）
 
+  /* Step 1: Initialize page_free_list. */
+  /* Hint: Use macro `LIST_INIT` defined in include/queue.h. */
+  LIST_INIT( &page_free_list ); //LIST_INIT调用LIST_FIRST，而LIST_FIRST中是((head)->lh_first)，因此要用指针的形式
 
-    /* Step 2: Align `freemem` up to multiple of BY2PG. */
+  /* Step 2: Align `freemem` up to multiple of BY2PG. */
+  ROUND( freemem , BY2PG );
 
+  /* Step 3: Mark all memory blow `freemem` as used(set `pp_ref`
+   * filed to 1) */
+  for(i=0;i<used_pages;i++)
+    pages[i].pp_ref = 1;
 
-    /* Step 3: Mark all memory blow `freemem` as used(set `pp_ref`
-     * filed to 1) */
+  /* Step 4: Mark the other memory as free. */
+  for(;i<npage;i++)
+  {
+    pages[i].pp_ref = 0;
+    if(i==used_pages)
+      LIST_INSERT_HEAD(&page_free_list, &pages[i], pp_link);
+    else
+      LIST_INSERT_AFTER(&pages[i-1], &pages[i], pp_link);
+  }
 
+  /*AlephDebug*/
+  /*
+    //printf("AlephDebug: Free Pages Information:\n");
+    //printf("AlephDebug: %08lx\n", LIST_FIRST(&page_free_list));
+    struct Page *aleph_temp = page_free_list.lh_first;
+    while(aleph_temp!=NULL)
+    {
 
-    /* Step 4: Mark the other memory as free. */
+      printf(" #%d addr = %08lx\n", aleph_temp - LIST_FIRST(&page_free_list), aleph_temp );
+      aleph_temp = LIST_NEXT(aleph_temp, pp_link);
+    }
+  */
 }
 
 /*Overview:
@@ -204,15 +261,31 @@ page_init(void)
 int
 page_alloc(struct Page **pp)
 {
-    struct Page *ppage_temp;
+  //printf("AlephDebug: =======page_alloc called=======\n");
+  //printf("AlephDebug: pp = %08lx\n",pp);
+  struct Page *ppage_temp;
 
-    /* Step 1: Get a page from free memory. If fails, return the error code.*/
+  /* Step 1: Get a page from free memory. If fails, return the error code.*/
+  ppage_temp = LIST_FIRST(&page_free_list);
+  //printf("AlephDebug: ppage_temp = %08lx\n",ppage_temp);
 
+  /* Step 2: Initialize this page.
+   * Hint: use `bzero`. */
+  if(ppage_temp == NULL)
+  {
+    //printf("AlephDebug: page_alloc error\n");
+    return -E_NO_MEM;
+  }
+  else
+  {
+    //printf("AlephDebug: page_alloc success\n");
+    *pp = ppage_temp;
+    LIST_REMOVE(ppage_temp, pp_link);
 
-    /* Step 2: Initialize this page.
-     * Hint: use `bzero`. */
-
-
+    bzero((void *)page2kva(*pp), BY2PG);
+    //printf("AlephDebug: new LIST_FIRST(&page_free_list) = %08lx\n",LIST_FIRST(&page_free_list));
+    return 0;
+  }
 }
 
 /*Overview:
@@ -222,15 +295,24 @@ page_alloc(struct Page **pp)
 void
 page_free(struct Page *pp)
 {
-    /* Step 1: If there's still virtual address refers to this page, do nothing. */
+  //printf("AlephDebug: =======page_free called=======\n");
+  //printf("AlephDebug: pp = %08lx\n",pp);
+  //printf("AlephDebug: pp->pp_ref = %d\n",pp->pp_ref);
+  /* Step 1: If there's still virtual address refers to this page, do nothing. */
+  if(pp->pp_ref > 0)
+    return ;
 
+  /* Step 2: If the `pp_ref` reaches to 0, mark this page as free and return. */
+  if (pp->pp_ref == 0)
+  {
+		LIST_INSERT_HEAD(&page_free_list, pp, pp_link);
+    //printf("AlephDebug: new LIST_FIRST(&page_free_list) = %08lx\n",LIST_FIRST(&page_free_list));
+		return;
+	}
 
-    /* Step 2: If the `pp_ref` reaches to 0, mark this page as free and return. */
-
-
-    /* If the value of `pp_ref` less than 0, some error must occurred before,
-     * so PANIC !!! */
-    panic("cgh:pp->pp_ref is less than zero\n");
+  /* If the value of `pp_ref` less than 0, some error must occurred before,
+   * so PANIC !!! */
+  panic("cgh:pp->pp_ref is less than zero\n");
 }
 
 /*Overview:
@@ -249,26 +331,56 @@ page_free(struct Page *pp)
 	We use a two-level pointer to store page table entry and return a state code to indicate
 	whether this function execute successfully or not.
     This function have something in common with function `boot_pgdir_walk`.*/
-int
-pgdir_walk(Pde *pgdir, u_long va, int create, Pte **ppte)
+/**
+ * 利用页目录虚拟地址和某个虚拟地址，找到这个虚拟地址的页表的虚拟地址。如果找不到还可以创建。
+ * @param  pgdir  页目录的虚拟地址
+ * @param  va     提供的某个虚拟地址
+ * @param  create 是否创建新页表
+ * @param  ppte   用于返回找到的页表的虚拟地址
+ * @return        0：成功找到； 小于0：错误
+ */
+int pgdir_walk(Pde *pgdir, u_long va, int create, Pte **ppte)
 {
-    Pde *pgdir_entryp;
-    Pte *pgtable;
-    struct Page *ppage;
+  //printf("AlephDebug: =======pgdir_walk called=======\n");
+  //printf("AlephDebug: pgdir = %08lx\n",pgdir);
+  //printf("AlephDebug: va = %08lx\n",va);
+  //printf("AlephDebug: create = %d\n",create);
+  //printf("AlephDebug: ppte = %08lx\n",ppte);
+  Pde *pgdir_entryp; //页目录中这个va的页表所在的项的虚拟地址
+  Pte *pgtable;//页表的虚拟地址
+  struct Page *ppage;//指向新创造出来的页的控制块
 
-    /* Step 1: Get the corresponding page directory entry and page table. */
+  /* Step 1: Get the corresponding page directory entry and page table. */
+  pgdir_entryp = pgdir + PDX(va);
+  //printf("AlephDebug: pgdir_entryp = %08lx *pgdir_entryp = %08lx\n", pgdir_entryp , *pgdir_entryp );
 
+  /* Step 2: If the corresponding page table is not exist(valid) and parameter `create`
+   * is set, create one. And set the correct permission bits for this new page
+   * table.
+   * When creating new page table, maybe out of memory. */
+  if ( !((*pgdir_entryp) & PTE_V) && (create) )
+  {
+    //printf("AlephDebug: page table is not exist\n");
+    if ( page_alloc(&ppage) != 0 )
+    {
+      *ppte = 0;
+      return -E_NO_MEM;
+    }
+    *pgdir_entryp = page2pa(ppage) | PTE_V;
+    pgtable = KADDR(page2pa(ppage));
+    ppage->pp_ref++;
+    //printf("AlephDebug: *pgdir_entryp = %08lx\n", *pgdir_entryp );
+  }
+  else
+  {
+    pgtable = KADDR(PTE_ADDR(*pgdir_entryp));
+  }
+  //printf("AlephDebug: pgtable = %08lx\n", pgtable );
+  /* Step 3: Set the page table entry to `*ppte` as return value. */
+  *ppte = pgtable + PTX(va);
+  //printf("AlephDebug: *ppte = %08lx\n", *ppte );
 
-    /* Step 2: If the corresponding page table is not exist(valid) and parameter `create`
-     * is set, create one. And set the correct permission bits for this new page
-     * table.
-     * When creating new page table, maybe out of memory. */
-
-
-    /* Step 3: Set the page table entry to `*ppte` as return value. */
-
-
-    return 0;
+  return 0;
 }
 
 /*Overview:
@@ -282,37 +394,47 @@ pgdir_walk(Pde *pgdir, u_long va, int create, Pte **ppte)
   Hint:
 	If there is already a page mapped at `va`, call page_remove() to release this mapping.
 	The `pp_ref` should be incremented if the insertion succeeds.*/
-int
-page_insert(Pde *pgdir, struct Page *pp, u_long va, u_int perm)
+int page_insert(Pde *pgdir, struct Page *pp, u_long va, u_int perm)
 {
-    u_int PERM;
-    Pte *pgtable_entry;
-    PERM = perm | PTE_V;
+  //printf("AlephDebug: =======page_insert called=======\n");
+  //printf("AlephDebug: pgdir = %08lx\n", pgdir);
+  //printf("AlephDebug: pp = %08lx\n", pp);
+  //printf("AlephDebug: va = %08lx\n", va);
+  //printf("AlephDebug: perm = %03lx\n", perm);
+  u_int PERM;
+  Pte *pgtable_entry;
+  PERM = perm | PTE_V;
 
-    /* Step 1: Get corresponding page table entry. */
-    pgdir_walk(pgdir, va, 0, &pgtable_entry);
-
-    if (pgtable_entry != 0 && (*pgtable_entry & PTE_V) != 0) {
-        if (pa2page(*pgtable_entry) != pp) {
-            page_remove(pgdir, va);
-        } else	{
-            tlb_invalidate(pgdir, va);
-            *pgtable_entry = (page2pa(pp) | PERM);
-            return 0;
-        }
+  /* Step 1: Get corresponding page table entry. */
+  pgdir_walk(pgdir, va, 0, &pgtable_entry);
+  //printf("AlephDebug: pgtable_entry = %08lx\n",pgtable_entry);
+  //printf("AlephDebug: (*pgtable_entry & PTE_V) = %08lx\n",(*pgtable_entry & PTE_V));
+  if (pgtable_entry != 0 && (*pgtable_entry & PTE_V) != 0)
+  {
+    //printf("AlephDebug: pa2page(*pgtable_entry) = %08lx\n",pa2page(*pgtable_entry));
+    if (pa2page(*pgtable_entry) != pp)
+    {
+      page_remove(pgdir, va);
     }
-
-    /* Step 2: Update TLB. */
-    tlb_invalidate(pgdir, va);
-
-    /* Step 3: Do check, re-get page table entry to validate the insertion. */
-    if (pgdir_walk(pgdir, va, 1, &pgtable_entry) != 0) {
-        return -E_NO_MEM;    // panic ("page insert failed .\n");
+    else
+    {
+      tlb_invalidate(pgdir, va);
+      *pgtable_entry = (page2pa(pp) | PERM);
+      return 0;
     }
+  }
 
-    *pgtable_entry = (page2pa(pp) | PERM);
-    pp->pp_ref++;
-    return 0;
+  /* Step 2: Update TLB. */
+  tlb_invalidate(pgdir, va);
+
+  /* Step 3: Do check, re-get page table entry to validate the insertion. */
+  if (pgdir_walk(pgdir, va, 1, &pgtable_entry) != 0) {
+      return -E_NO_MEM;    // panic ("page insert failed .\n");
+  }
+
+  *pgtable_entry = (page2pa(pp) | PERM);
+  pp->pp_ref++;
+  return 0;
 }
 
 /*Overview:
@@ -536,4 +658,3 @@ void pageout(int va, int context)
     page_insert((Pde *)context, p, VA2PFN(va), PTE_R);
     printf("pageout:\t@@@___0x%x___@@@  ins a page \n", va);
 }
-

@@ -29,8 +29,10 @@ static void myoutput(void *arg, char *s, int l) //这个*arg干啥的？？
 
   for (i=0; i< l; i++) {
     printcharc(s[i]);
-    if (s[i] == '\n')
+
+    if (s[i] == '\n')  //这样会输出两个换行欸
       printcharc('\n');
+    
   }
 }
 

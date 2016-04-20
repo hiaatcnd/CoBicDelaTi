@@ -17,9 +17,9 @@
 #define PDMAP		(4*1024*1024)	// bytes mapped by a page directory entry
 #define PGSHIFT		12
 #define PDSHIFT		22		// log2(PDMAP)
-#define PDX(va)		((((u_long)(va))>>22) & 0x03FF)
-#define PTX(va)		((((u_long)(va))>>12) & 0x03FF)
-#define PTE_ADDR(pte)	((u_long)(pte)&~0xFFF)
+#define PDX(va)		((((u_long)(va))>>22) & 0x03FF)	//获取页表号
+#define PTX(va)		((((u_long)(va))>>12) & 0x03FF)	//获取页号
+#define PTE_ADDR(pte)	((u_long)(pte)&~0xFFF) //去掉后12位，页表首地址
 
 // page number field of address
 #define PPN(va)		(((u_long)(va))>>12)

@@ -12,7 +12,7 @@ void mips_init()
 	mips_detect_memory();
 	mips_vm_init();
 	page_init();
-    page_check();
+  page_check();
 
 	panic("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
 

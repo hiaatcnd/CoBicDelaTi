@@ -35,12 +35,12 @@ lp_Print(
 				)
 {
 	/* 给定一个字符串s（其实是字符指针）和长度l，将其输出 */
-	#define 	OUTPUT(arg, s, l)  \
-	  { if (((l) < 0) || ((l) > LP_MAX_BUF)) { \
-	       (*output)(arg, (char*)theFatalMsg, sizeof(theFatalMsg)-1); for(;;); \
-	    } else { \
-	      (*output)(arg, s, l); \
-	    } \
+	#define 	OUTPUT(arg, s, l)  																								\
+	  { if (((l) < 0) || ((l) > LP_MAX_BUF)) { 																	\
+	       (*output)(arg, (char*)theFatalMsg, sizeof(theFatalMsg)-1); for(;;); 	\
+	    } else { 																																\
+	      (*output)(arg, s, l); 																								\
+	    } 																																			\
 	  }
 
   char buf[LP_MAX_BUF];
