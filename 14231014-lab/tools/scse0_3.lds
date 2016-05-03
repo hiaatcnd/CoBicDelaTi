@@ -12,6 +12,7 @@ SECTIONS
 .except_vec3 : {
    *(.text.exc)
 }
+
 . =0x80200000;
 
 .text :{

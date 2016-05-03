@@ -4,6 +4,18 @@
 !_TAG_PROGRAM_NAME	Exuberant Ctags	//
 !_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
 !_TAG_PROGRAM_VERSION	5.8	//
-mips_init	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/init/init.c	/^void mips_init()$/;"	function	line:8
-bcopy	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/init/init.c	/^void bcopy(const void *src, void *dst, size_t len)$/;"	function	line:48	signature:(const void *src, void *dst, size_t len)
-bzero	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/init/init.c	/^void bzero(void *b, size_t len)$/;"	function	line:69	signature:(void *b, size_t len)
+exception_handlers	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/lib/traps.c	/^unsigned long exception_handlers[32];$/;"	variable	line:10
+trap_init	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/lib/traps.c	/^void trap_init()$/;"	function	line:11
+set_except_vector	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/lib/traps.c	/^void *set_except_vector(int n, void *addr)$/;"	function	line:25	signature:(int n, void *addr)
+pgfault_trap_frame	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/lib/traps.c	/^struct pgfault_trap_frame {$/;"	struct	line:34	file:
+fault_va	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/lib/traps.c	/^	u_int fault_va;$/;"	member	line:35	struct:pgfault_trap_frame	file:
+err	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/lib/traps.c	/^	u_int err;$/;"	member	line:36	struct:pgfault_trap_frame	file:
+sp	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/lib/traps.c	/^	u_int sp;$/;"	member	line:37	struct:pgfault_trap_frame	file:
+eflags	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/lib/traps.c	/^	u_int eflags;$/;"	member	line:38	struct:pgfault_trap_frame	file:
+pc	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/lib/traps.c	/^	u_int pc;$/;"	member	line:39	struct:pgfault_trap_frame	file:
+empty1	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/lib/traps.c	/^	u_int empty1;$/;"	member	line:40	struct:pgfault_trap_frame	file:
+empty2	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/lib/traps.c	/^	u_int empty2;$/;"	member	line:41	struct:pgfault_trap_frame	file:
+empty3	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/lib/traps.c	/^	u_int empty3;$/;"	member	line:42	struct:pgfault_trap_frame	file:
+empty4	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/lib/traps.c	/^	u_int empty4;$/;"	member	line:43	struct:pgfault_trap_frame	file:
+empty5	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/lib/traps.c	/^	u_int empty5;$/;"	member	line:44	struct:pgfault_trap_frame	file:
+page_fault_handler	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/lib/traps.c	/^page_fault_handler(struct Trapframe *tf)$/;"	function	line:49	signature:(struct Trapframe *tf)

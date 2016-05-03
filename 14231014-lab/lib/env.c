@@ -30,6 +30,9 @@ extern char *KERNEL_SP;
 
 u_int mkenvid(struct Env *e)
 {
+	//printf("AlephDebug: ============mkenvid============\n");
+	//printf("AlephDebug: PARA:--------------------------\n");
+  //printf("AlephDebug: e = %08lx\n", e);
 	static u_long next_env_id = 0;
 
     /*Hint: lower bits of envid hold e's position in the envs array. */
@@ -94,6 +97,7 @@ int envid2env(u_int envid, struct Env **penv, int checkperm)
 void
 env_init(void)
 {
+	//printf("AlephDebug: ============env_init===========\n");
 	int i;
   /*Step 1: Initial env_free_list. */
 	LIST_INIT( &env_free_list );
@@ -118,7 +122,9 @@ env_init(void)
 static int
 env_setup_vm(struct Env *e)
 {
-
+	//printf("AlephDebug: ==========env_setup_vm=========\n");
+	//printf("AlephDebug: PARA:--------------------------\n");
+	//printf("AlephDebug: e = %08lx\n", e);
 	int i, r;
 	struct Page *p = NULL;
 	Pde *pgdir;
@@ -181,6 +187,10 @@ env_setup_vm(struct Env *e)
 int
 env_alloc(struct Env **new, u_int parent_id)
 {
+	//printf("AlephDebug: ===========env_alloc===========\n");
+	//printf("AlephDebug: PARA:--------------------------\n");
+	//printf("AlephDebug: new = %08lx\n", new);
+	//printf("AlephDebug: parent_id = %08lx\n", parent_id);
 	int r;
 	struct Env *e;
 
@@ -231,12 +241,6 @@ env_alloc(struct Env **new, u_int parent_id)
 static int load_icode_mapper(u_long va, u_int32_t sgsize,
 							 u_char *bin, u_int32_t bin_size, void *user_data)
 {
-	struct Env *env = (struct Env *)user_data;
-	struct Page *p = NULL;
-	u_long i;
-	int r;
-	u_long offset = va - ROUNDDOWN(va, BY2PG);
-
 	//printf("AlephDebug: =======load_icode_mapper=======\n");
 	//printf("AlephDebug: PARA:--------------------------\n");
   //printf("AlephDebug: va = %08lx\n", va);
@@ -244,6 +248,23 @@ static int load_icode_mapper(u_long va, u_int32_t sgsize,
   //printf("AlephDebug: bin = %08lx\n", bin);
   //printf("AlephDebug: bin_size = %08lx\n", bin_size);
 	//printf("AlephDebug: user_data = %08lx\n", user_data);
+
+	struct Env *env = (struct Env *)user_data;
+	struct Page *p = NULL;
+	u_long i;
+	int r;
+	u_long offset = va - ROUNDDOWN(va, BY2PG);
+
+	//printf("AlephDebug: LOCO_ARG:----------------------\n");
+	//printf("AlephDebug: env = %08lx\n", env);
+	//printf("AlephDebug: p = %08lx\n", p);
+	//printf("AlephDebug: offset = %08lx\n", offset);
+
+	if(offset < 0)
+	{
+		//printf("AlephDebug: WARNING : OFFSET < 0 !!!!!!!\n");
+		return -1;
+	}
 
 	/*Step 1: load all content of bin into memory. */
 	for (i = 0; i < bin_size; i += BY2PG) {
@@ -268,10 +289,6 @@ static int load_icode_mapper(u_long va, u_int32_t sgsize,
 		i+=BY2PG;
 	}
 
-	//printf("AlephDebug: LOCO_ARG:----------------------\n");
-	//printf("AlephDebug: env = %08lx\n", env);
-	//printf("AlephDebug: p = %08lx\n", p);
-	//printf("AlephDebug: offset = %08lx\n", offset);
 	//printf("AlephDebug: OTHER_LOG:----------------------\n");
 	//printf("AlephDebug: can BY2PG divide exactly sgsize? %d\n", sgsize%BY2PG==0);
 	//printf("AlephDebug: can BY2PG divide exactly bin_size? %d\n", bin_size%BY2PG==0);
@@ -365,6 +382,9 @@ env_create(u_char *binary, int size)
 void
 env_free(struct Env *e)
 {
+	//printf("AlephDebug: ===========env_free============\n");
+	//printf("AlephDebug: PARA:--------------------------\n");
+	//printf("AlephDebug: e = %08lx\n", e);
 	Pte *pt;
 	u_int pdeno, pteno, pa;
 
@@ -406,6 +426,10 @@ env_free(struct Env *e)
 void
 env_destroy(struct Env *e)
 {
+	//printf("AlephDebug: ==========env_destroy==========\n");
+	//printf("AlephDebug: PARA:--------------------------\n");
+  //printf("AlephDebug: e = %08lx\n", e);
+
   /* Hint: free e. */
 	env_free(e);
 
@@ -444,22 +468,28 @@ env_run(struct Env *e)
 	/*Step 1: save register state of curenv. */
   /* Hint: if there is a environment running,you should do
   *  context switch.You can imitate env_destroy() 's behaviors.*/
-	if(curenv != NULL)
+	if(curenv)
 	{
 		bcopy((void *)TIMESTACK - sizeof(struct Trapframe), (void *)(&(curenv->env_tf)), sizeof(struct Trapframe));
 		curenv->env_tf.pc = ((struct Trapframe *)(TIMESTACK - sizeof(struct Trapframe)))->cp0_epc;
 	}
-
+	//printf("AlephDebug: ---------STEP 1 OVER-----------\n");
   /*Step 2: Set 'curenv' to the new environment. */
 	curenv = e;
-
+	//printf("AlephDebug: ---------STEP 2 OVER-----------\n");
   /*Step 3: Use lcontext() to switch to its address space. */
 	lcontext(KADDR(curenv->env_cr3));
-
+	//printf("AlephDebug: ---------STEP 3 OVER-----------\n");
   /*Step 4: Use env_pop_tf() to restore the environment's
    * environment   registers and drop into user mode in the
    * the   environment.
    */
   /* Hint: You should use GET_ENV_ASID there.Think why? */
+	//printf("AlephDebug: ---------STEP 4 START----------\n");
+	//printf("AlephDebug: &(curenv->env_tf) = %08lx\n", &(curenv->env_tf));
+	//printf("AlephDebug: (curenv->env_tf).pc = %08lx\n", (curenv->env_tf).pc);
+	//printf("AlephDebug: curenv->env_id = %08lx\n", curenv->env_id);
+	//printf("AlephDebug: GET_ENV_ASID(curenv->env_id) = %08lx\n", GET_ENV_ASID(curenv->env_id));
 	env_pop_tf(&(curenv->env_tf), GET_ENV_ASID(curenv->env_id));
+	//printf("AlephDebug: ---------STEP 4 OVER-----------\n");
 }

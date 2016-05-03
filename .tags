@@ -27,21 +27,40 @@ delay	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/boot/start.S	/
 tlbra	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/boot/start.S	/^tlbra:$/;"	label	line:54
 KERNEL_STACK	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/boot/start.S	/^KERNEL_STACK:$/;"	label	line:58
 loop	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/boot/start.S	/^loop:$/;"	label	line:90
+KERNEL_SP	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/lib/env_asm.S	/^KERNEL_SP:$/;"	label	line:7
 sched_yield	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/lib/sched.c	/^void sched_yield(void)$/;"	function	line:14	signature:(void)
 envs	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/lib/env.c	/^struct Env *envs = NULL;		\/\/ All environments$/;"	variable	line:12	typeref:struct:Env
 curenv	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/lib/env.c	/^struct Env *curenv = NULL;	        \/\/ the current env$/;"	variable	line:13	typeref:struct:Env
 env_free_list	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/lib/env.c	/^static struct Env_list env_free_list;	\/\/ Free list$/;"	variable	line:15	typeref:struct:Env_list	file:
 mkenvid	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/lib/env.c	/^u_int mkenvid(struct Env *e)$/;"	function	line:31	signature:(struct Env *e)
-envid2env	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/lib/env.c	/^int envid2env(u_int envid, struct Env **penv, int checkperm)$/;"	function	line:53	signature:(u_int envid, struct Env **penv, int checkperm)
-env_init	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/lib/env.c	/^env_init(void)$/;"	function	line:95	signature:(void)
-env_setup_vm	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/lib/env.c	/^env_setup_vm(struct Env *e)$/;"	function	line:119	file:	signature:(struct Env *e)
-env_alloc	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/lib/env.c	/^env_alloc(struct Env **new, u_int parent_id)$/;"	function	line:182	signature:(struct Env **new, u_int parent_id)
-load_icode_mapper	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/lib/env.c	/^static int load_icode_mapper(u_long va, u_int32_t sgsize,$/;"	function	line:231	file:	signature:(u_long va, u_int32_t sgsize, u_char *bin, u_int32_t bin_size, void *user_data)
-load_icode	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/lib/env.c	/^load_icode(struct Env *e, u_char *binary, u_int size)$/;"	function	line:294	file:	signature:(struct Env *e, u_char *binary, u_int size)
-env_create	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/lib/env.c	/^env_create(u_char *binary, int size)$/;"	function	line:346	signature:(u_char *binary, int size)
-env_free	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/lib/env.c	/^env_free(struct Env *e)$/;"	function	line:366	signature:(struct Env *e)
-env_destroy	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/lib/env.c	/^env_destroy(struct Env *e)$/;"	function	line:407	signature:(struct Env *e)
-env_run	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/lib/env.c	/^env_run(struct Env *e)$/;"	function	line:439	signature:(struct Env *e)
+envid2env	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/lib/env.c	/^int envid2env(u_int envid, struct Env **penv, int checkperm)$/;"	function	line:56	signature:(u_int envid, struct Env **penv, int checkperm)
+env_init	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/lib/env.c	/^env_init(void)$/;"	function	line:98	signature:(void)
+env_setup_vm	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/lib/env.c	/^env_setup_vm(struct Env *e)$/;"	function	line:123	file:	signature:(struct Env *e)
+env_alloc	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/lib/env.c	/^env_alloc(struct Env **new, u_int parent_id)$/;"	function	line:188	signature:(struct Env **new, u_int parent_id)
+load_icode_mapper	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/lib/env.c	/^static int load_icode_mapper(u_long va, u_int32_t sgsize,$/;"	function	line:241	file:	signature:(u_long va, u_int32_t sgsize, u_char *bin, u_int32_t bin_size, void *user_data)
+load_icode	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/lib/env.c	/^load_icode(struct Env *e, u_char *binary, u_int size)$/;"	function	line:311	file:	signature:(struct Env *e, u_char *binary, u_int size)
+env_create	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/lib/env.c	/^env_create(u_char *binary, int size)$/;"	function	line:363	signature:(u_char *binary, int size)
+env_free	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/lib/env.c	/^env_free(struct Env *e)$/;"	function	line:383	signature:(struct Env *e)
+env_destroy	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/lib/env.c	/^env_destroy(struct Env *e)$/;"	function	line:427	signature:(struct Env *e)
+env_run	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/lib/env.c	/^env_run(struct Env *e)$/;"	function	line:463	signature:(struct Env *e)
+myoutput	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/lib/printf.c	/^static void myoutput(void *arg, char *s, int l)$/;"	function	line:22	file:	signature:(void *arg, char *s, int l)
+printf	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/lib/printf.c	/^void printf(char *fmt, ...)$/;"	function	line:35	signature:(char *fmt, ...)
+_panic	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/lib/printf.c	/^_panic(const char *file, int line, const char *fmt,...)$/;"	function	line:44	signature:(const char *file, int line, const char *fmt,...)
 mips_init	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/init/init.c	/^void mips_init()$/;"	function	line:8
 bcopy	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/init/init.c	/^void bcopy(const void *src, void *dst, size_t len)$/;"	function	line:48	signature:(const void *src, void *dst, size_t len)
 bzero	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/init/init.c	/^void bzero(void *b, size_t len)$/;"	function	line:69	signature:(void *b, size_t len)
+exception_handlers	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/lib/traps.c	/^unsigned long exception_handlers[32];$/;"	variable	line:10
+trap_init	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/lib/traps.c	/^void trap_init()$/;"	function	line:11
+set_except_vector	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/lib/traps.c	/^void *set_except_vector(int n, void *addr)$/;"	function	line:25	signature:(int n, void *addr)
+pgfault_trap_frame	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/lib/traps.c	/^struct pgfault_trap_frame {$/;"	struct	line:34	file:
+fault_va	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/lib/traps.c	/^	u_int fault_va;$/;"	member	line:35	struct:pgfault_trap_frame	file:
+err	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/lib/traps.c	/^	u_int err;$/;"	member	line:36	struct:pgfault_trap_frame	file:
+sp	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/lib/traps.c	/^	u_int sp;$/;"	member	line:37	struct:pgfault_trap_frame	file:
+eflags	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/lib/traps.c	/^	u_int eflags;$/;"	member	line:38	struct:pgfault_trap_frame	file:
+pc	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/lib/traps.c	/^	u_int pc;$/;"	member	line:39	struct:pgfault_trap_frame	file:
+empty1	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/lib/traps.c	/^	u_int empty1;$/;"	member	line:40	struct:pgfault_trap_frame	file:
+empty2	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/lib/traps.c	/^	u_int empty2;$/;"	member	line:41	struct:pgfault_trap_frame	file:
+empty3	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/lib/traps.c	/^	u_int empty3;$/;"	member	line:42	struct:pgfault_trap_frame	file:
+empty4	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/lib/traps.c	/^	u_int empty4;$/;"	member	line:43	struct:pgfault_trap_frame	file:
+empty5	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/lib/traps.c	/^	u_int empty5;$/;"	member	line:44	struct:pgfault_trap_frame	file:
+page_fault_handler	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/lib/traps.c	/^page_fault_handler(struct Trapframe *tf)$/;"	function	line:49	signature:(struct Trapframe *tf)

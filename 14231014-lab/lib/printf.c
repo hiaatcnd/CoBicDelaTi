@@ -25,7 +25,7 @@ static void myoutput(void *arg, char *s, int l)
 
     // special termination call
     if ((l==1) && (s[0] == '\0')) return;
-    
+
     for (i=0; i< l; i++) {
 	printcharc(s[i]);
 	if (s[i] == '\n') printcharc('\n');
