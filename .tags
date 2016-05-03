@@ -1,0 +1,47 @@
+maxpa	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/mm/pmap.c	/^u_long maxpa;            \/* Maximum physical address *\/$/;"	variable	line:9
+npage	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/mm/pmap.c	/^u_long npage;            \/* Amount of memory(in pages) *\/$/;"	variable	line:10
+basemem	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/mm/pmap.c	/^u_long basemem;          \/* Amount of base memory(in bytes) *\/$/;"	variable	line:11
+extmem	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/mm/pmap.c	/^u_long extmem;           \/* Amount of extended memory(in bytes) *\/$/;"	variable	line:12
+boot_pgdir	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/mm/pmap.c	/^Pde *boot_pgdir; \/\/Pde是u_long$/;"	variable	line:14
+pages	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/mm/pmap.c	/^struct Page *pages; \/\/Page用来存储物理页框信息。注意pages既能当数组也能当链表有木有$/;"	variable	line:16	typeref:struct:Page
+freemem	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/mm/pmap.c	/^static u_long freemem;\/\/freemem指向尚未分配的空间的头部$/;"	variable	line:17	file:
+page_free_list	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/mm/pmap.c	/^static struct Page_list page_free_list;	\/* Free list of physical pages *\/$/;"	variable	line:19	typeref:struct:Page_list	file:
+mips_detect_memory	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/mm/pmap.c	/^void mips_detect_memory()$/;"	function	line:25
+alloc	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/mm/pmap.c	/^static void *alloc(u_int n, u_int align, int clear)$/;"	function	line:44	file:	signature:(u_int n, u_int align, int clear)
+boot_pgdir_walk	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/mm/pmap.c	/^static Pte *boot_pgdir_walk(Pde *pgdir, u_long va, int create)$/;"	function	line:92	file:	signature:(Pde *pgdir, u_long va, int create)
+boot_map_segment	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/mm/pmap.c	/^void boot_map_segment(Pde *pgdir, u_long va, u_long size, u_long pa, int perm)$/;"	function	line:137	signature:(Pde *pgdir, u_long va, u_long size, u_long pa, int perm)
+mips_vm_init	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/mm/pmap.c	/^void mips_vm_init()$/;"	function	line:160
+page_init	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/mm/pmap.c	/^page_init(void)$/;"	function	line:206	signature:(void)
+page_alloc	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/mm/pmap.c	/^page_alloc(struct Page **pp)$/;"	function	line:262	signature:(struct Page **pp)
+page_free	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/mm/pmap.c	/^page_free(struct Page *pp)$/;"	function	line:296	signature:(struct Page *pp)
+pgdir_walk	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/mm/pmap.c	/^int pgdir_walk(Pde *pgdir, u_long va, int create, Pte **ppte)$/;"	function	line:342	signature:(Pde *pgdir, u_long va, int create, Pte **ppte)
+page_insert	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/mm/pmap.c	/^int page_insert(Pde *pgdir, struct Page *pp, u_long va, u_int perm)$/;"	function	line:397	signature:(Pde *pgdir, struct Page *pp, u_long va, u_int perm)
+page_lookup	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/mm/pmap.c	/^page_lookup(Pde *pgdir, u_long va, Pte **ppte)$/;"	function	line:447	signature:(Pde *pgdir, u_long va, Pte **ppte)
+page_decref	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/mm/pmap.c	/^void page_decref(struct Page *pp) {$/;"	function	line:476	signature:(struct Page *pp)
+page_remove	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/mm/pmap.c	/^page_remove(Pde *pgdir, u_long va)$/;"	function	line:485	signature:(Pde *pgdir, u_long va)
+tlb_invalidate	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/mm/pmap.c	/^tlb_invalidate(Pde *pgdir, u_long va)$/;"	function	line:514	signature:(Pde *pgdir, u_long va)
+page_check	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/mm/pmap.c	/^page_check(void)$/;"	function	line:525	signature:(void)
+pageout	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/mm/pmap.c	/^void pageout(int va, int context)$/;"	function	line:635	signature:(int va, int context)
+mCONTEXT	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/boot/start.S	/^mCONTEXT:$/;"	label	line:46
+delay	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/boot/start.S	/^delay:$/;"	label	line:50
+tlbra	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/boot/start.S	/^tlbra:$/;"	label	line:54
+KERNEL_STACK	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/boot/start.S	/^KERNEL_STACK:$/;"	label	line:58
+loop	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/boot/start.S	/^loop:$/;"	label	line:90
+sched_yield	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/lib/sched.c	/^void sched_yield(void)$/;"	function	line:14	signature:(void)
+envs	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/lib/env.c	/^struct Env *envs = NULL;		\/\/ All environments$/;"	variable	line:12	typeref:struct:Env
+curenv	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/lib/env.c	/^struct Env *curenv = NULL;	        \/\/ the current env$/;"	variable	line:13	typeref:struct:Env
+env_free_list	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/lib/env.c	/^static struct Env_list env_free_list;	\/\/ Free list$/;"	variable	line:15	typeref:struct:Env_list	file:
+mkenvid	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/lib/env.c	/^u_int mkenvid(struct Env *e)$/;"	function	line:31	signature:(struct Env *e)
+envid2env	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/lib/env.c	/^int envid2env(u_int envid, struct Env **penv, int checkperm)$/;"	function	line:53	signature:(u_int envid, struct Env **penv, int checkperm)
+env_init	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/lib/env.c	/^env_init(void)$/;"	function	line:95	signature:(void)
+env_setup_vm	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/lib/env.c	/^env_setup_vm(struct Env *e)$/;"	function	line:119	file:	signature:(struct Env *e)
+env_alloc	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/lib/env.c	/^env_alloc(struct Env **new, u_int parent_id)$/;"	function	line:182	signature:(struct Env **new, u_int parent_id)
+load_icode_mapper	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/lib/env.c	/^static int load_icode_mapper(u_long va, u_int32_t sgsize,$/;"	function	line:231	file:	signature:(u_long va, u_int32_t sgsize, u_char *bin, u_int32_t bin_size, void *user_data)
+load_icode	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/lib/env.c	/^load_icode(struct Env *e, u_char *binary, u_int size)$/;"	function	line:294	file:	signature:(struct Env *e, u_char *binary, u_int size)
+env_create	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/lib/env.c	/^env_create(u_char *binary, int size)$/;"	function	line:346	signature:(u_char *binary, int size)
+env_free	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/lib/env.c	/^env_free(struct Env *e)$/;"	function	line:366	signature:(struct Env *e)
+env_destroy	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/lib/env.c	/^env_destroy(struct Env *e)$/;"	function	line:407	signature:(struct Env *e)
+env_run	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/lib/env.c	/^env_run(struct Env *e)$/;"	function	line:439	signature:(struct Env *e)
+mips_init	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/init/init.c	/^void mips_init()$/;"	function	line:8
+bcopy	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/init/init.c	/^void bcopy(const void *src, void *dst, size_t len)$/;"	function	line:48	signature:(const void *src, void *dst, size_t len)
+bzero	/Users/Basun/Documents/GitHub/BUAA_MIPS_OS_LAB/14231014-lab/init/init.c	/^void bzero(void *b, size_t len)$/;"	function	line:69	signature:(void *b, size_t len)

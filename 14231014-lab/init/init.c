@@ -23,9 +23,23 @@ void mips_init()
 	ENV_CREATE(user_A);
 	ENV_CREATE(user_B);
 
+	extern u_char binary_user_A_start[];
+	extern u_int  binary_user_A_size;
+	extern u_char binary_user_B_start[];
+	extern u_int  binary_user_B_size;
+	//printf("AlephDebug: ===========mips_init===========\n");
+	//printf("AlephDebug: OTHER_LOG:--------------------------\n");
+	//printf("AlephDebug: binary_user_A_start = %08lx\n", binary_user_A_start);
+	//printf("AlephDebug: &binary_user_A_size = %08lx\n", &binary_user_A_size);
+	//printf("AlephDebug: binary_user_B_start = %08lx\n", binary_user_B_start);
+	//printf("AlephDebug: &binary_user_B_size = %08lx\n", &binary_user_B_size);
 
 	trap_init();
 	kclock_init();
+
+	env_run(&envs[0]);
+	env_run(&envs[1]);
+
 	panic("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
 	while(1);
 	panic("init.c:\tend of mips_init() reached!");

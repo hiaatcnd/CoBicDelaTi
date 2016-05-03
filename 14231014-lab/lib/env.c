@@ -237,20 +237,20 @@ static int load_icode_mapper(u_long va, u_int32_t sgsize,
 	int r;
 	u_long offset = va - ROUNDDOWN(va, BY2PG);
 
-	printf("AlephDebug: =======load_icode_mapper=======\n");
-	printf("AlephDebug: PARA:--------------------------\n");
-  printf("AlephDebug: va = %08lx\n", va);
-  printf("AlephDebug: sgsize = %08lx\n", sgsize);
-  printf("AlephDebug: bin = %08lx\n", bin);
-  printf("AlephDebug: bin_size = %08lx\n", bin_size);
-	printf("AlephDebug: user_data = %08lx\n", user_data);
+	//printf("AlephDebug: =======load_icode_mapper=======\n");
+	//printf("AlephDebug: PARA:--------------------------\n");
+  //printf("AlephDebug: va = %08lx\n", va);
+  //printf("AlephDebug: sgsize = %08lx\n", sgsize);
+  //printf("AlephDebug: bin = %08lx\n", bin);
+  //printf("AlephDebug: bin_size = %08lx\n", bin_size);
+	//printf("AlephDebug: user_data = %08lx\n", user_data);
 
 	/*Step 1: load all content of bin into memory. */
 	for (i = 0; i < bin_size; i += BY2PG) {
 		/* Hint: You should alloc a page and increase the reference count of it. */
 		if( (r = page_alloc(&p)) < 0 )
 			return r;
-		p->pp_ref++;
+		//p->pp_ref++; //我应该在这里增加引用数吗？
 
 		bcopy(bin+i, (char *)page2kva(p), BY2PG<(bin_size-i)?BY2PG:(bin_size-i) );
 
@@ -261,20 +261,20 @@ static int load_icode_mapper(u_long va, u_int32_t sgsize,
 	while (i < sgsize) {
 		if( (r = page_alloc(&p)) < 0 )
 			return r;
-		p->pp_ref++;
+		//p->pp_ref++; //我应该在这里增加引用数吗？
 
 		page_insert(env->env_pgdir, p, va+i, PTE_V|PTE_R);
 
 		i+=BY2PG;
 	}
 
-	printf("AlephDebug: LOCO_ARG:----------------------\n");
-	printf("AlephDebug: env = %08lx\n", env);
-	printf("AlephDebug: p = %08lx\n", p);
-	printf("AlephDebug: offset = %08lx\n", offset);
-	printf("AlephDebug: OTHER_LOG:----------------------\n");
-	printf("AlephDebug: can BY2PG divide exactly sgsize? %d\n", sgsize%BY2PG==0);
-	printf("AlephDebug: can BY2PG divide exactly bin_size? %d\n", bin_size%BY2PG==0);
+	//printf("AlephDebug: LOCO_ARG:----------------------\n");
+	//printf("AlephDebug: env = %08lx\n", env);
+	//printf("AlephDebug: p = %08lx\n", p);
+	//printf("AlephDebug: offset = %08lx\n", offset);
+	//printf("AlephDebug: OTHER_LOG:----------------------\n");
+	//printf("AlephDebug: can BY2PG divide exactly sgsize? %d\n", sgsize%BY2PG==0);
+	//printf("AlephDebug: can BY2PG divide exactly bin_size? %d\n", bin_size%BY2PG==0);
 
 	return 0;
 }
@@ -304,11 +304,11 @@ load_icode(struct Env *e, u_char *binary, u_int size)
 	u_long r;
   u_long perm;
 
-	printf("AlephDebug: ===========load_icode==========\n");
-	printf("AlephDebug: PARA:--------------------------\n");
-  printf("AlephDebug: e = %08lx\n", e);
-  printf("AlephDebug: binary = %08lx\n", binary);
-  printf("AlephDebug: size = %08lx\n", size);
+	//printf("AlephDebug: ===========load_icode==========\n");
+	//printf("AlephDebug: PARA:--------------------------\n");
+  //printf("AlephDebug: e = %08lx\n", e);
+  //printf("AlephDebug: binary = %08lx\n", binary);
+  //printf("AlephDebug: size = %08lx\n", size);
 
   /*Step 1: alloc a page. */
 	if( (r = page_alloc(&p)) < 0 )
@@ -326,12 +326,12 @@ load_icode(struct Env *e, u_char *binary, u_int size)
   /*Step 4:Set CPU's PC register as appropriate value. */
 	e->env_tf.pc = entry_point;
 
-	printf("AlephDebug: LOCO_ARG:----------------------\n");
-	printf("AlephDebug: p = %08lx\n", p);
-	printf("AlephDebug: entry_point = %08lx\n", entry_point);
-	printf("AlephDebug: perm = %08lx\n", perm);
-	printf("AlephDebug: OTHER_LOG:----------------------\n");
-	printf("AlephDebug: can BY2PG divide exactly size? %d\n", size%BY2PG==0);
+	//printf("AlephDebug: LOCO_ARG:----------------------\n");
+	//printf("AlephDebug: p = %08lx\n", p);
+	//printf("AlephDebug: entry_point = %08lx\n", entry_point);
+	//printf("AlephDebug: perm = %08lx\n", perm);
+	//printf("AlephDebug: OTHER_LOG:----------------------\n");
+	//printf("AlephDebug: can BY2PG divide exactly size? %d\n", size%BY2PG==0);
 }
 
 /* Overview:
@@ -347,13 +347,13 @@ env_create(u_char *binary, int size)
 {
 	struct Env *e;
 
-	printf("AlephDebug: ===========env_create==========\n");
-	printf("AlephDebug: PARA:--------------------------\n");
-  printf("AlephDebug: binary = %08lx\n", binary);
-  printf("AlephDebug: size = %08lx\n", size);
+	//printf("AlephDebug: ===========env_create==========\n");
+	//printf("AlephDebug: PARA:--------------------------\n");
+  //printf("AlephDebug: binary = %08lx\n", binary);
+  //printf("AlephDebug: size = %08lx\n", size);
 
   /*Step 1: Use env_alloc to alloc a new env. */
-	env_alloc(&e);
+	env_alloc(&e, 0);
 
   /*Step 2: Use load_icode() to load the named elf binary. */
 	load_icode(e, binary, size);
@@ -406,13 +406,13 @@ env_free(struct Env *e)
 void
 env_destroy(struct Env *e)
 {
-    /* Hint: free e. */
+  /* Hint: free e. */
 	env_free(e);
 
-    /* Hint: schedule to run a new environment. */
+  /* Hint: schedule to run a new environment. */
 	if (curenv == e) {
 		curenv = NULL;
-        /* Hint:Why this? */
+    /* Hint:Why this? */
 		bcopy((void *)KERNEL_SP - sizeof(struct Trapframe),
 			  (void *)TIMESTACK - sizeof(struct Trapframe),
 			  sizeof(struct Trapframe));
@@ -438,20 +438,28 @@ extern void lcontext(u_int contxt);
 void
 env_run(struct Env *e)
 {
+	//printf("AlephDebug: ============env_run============\n");
+	//printf("AlephDebug: PARA:--------------------------\n");
+	//printf("AlephDebug: e = %08lx\n", e);
 	/*Step 1: save register state of curenv. */
   /* Hint: if there is a environment running,you should do
   *  context switch.You can imitate env_destroy() 's behaviors.*/
-
+	if(curenv != NULL)
+	{
+		bcopy((void *)TIMESTACK - sizeof(struct Trapframe), (void *)(&(curenv->env_tf)), sizeof(struct Trapframe));
+		curenv->env_tf.pc = ((struct Trapframe *)(TIMESTACK - sizeof(struct Trapframe)))->cp0_epc;
+	}
 
   /*Step 2: Set 'curenv' to the new environment. */
-
+	curenv = e;
 
   /*Step 3: Use lcontext() to switch to its address space. */
-
+	lcontext(KADDR(curenv->env_cr3));
 
   /*Step 4: Use env_pop_tf() to restore the environment's
    * environment   registers and drop into user mode in the
    * the   environment.
    */
   /* Hint: You should use GET_ENV_ASID there.Think why? */
+	env_pop_tf(&(curenv->env_tf), GET_ENV_ASID(curenv->env_id));
 }

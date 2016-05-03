@@ -13,28 +13,24 @@
 #include <asm/cp0regdef.h>
 #include <asm/asm.h>
 .section .text.exc_vec3
-/*
 NESTED(except_vec3, 0, sp)
 		.set	noat
 		.set	noreorder
-*/
 		/*
 		 * Register saving is delayed as long as we don't know
 		 * which registers really need to be saved.
 		 */
-/*
 1:	//j	1b
 	nop
 
 		mfc0	k1,CP0_CAUSE
 		la	k0,exception_handlers
-*/
 		/*
 		 * Next lines assumes that the used CPU type has max.
 		 * 32 different types of exceptions. We might use this
 		 * to implement software exceptions in the future.
 		 */
-/*
+
 		andi	k1,0x7c
 		addu	k0,k1
 		lw	k0,(k0)
@@ -42,7 +38,6 @@ NESTED(except_vec3, 0, sp)
 		jr	k0
 		nop
 		END(except_vec3)
-*/
 		.set	at
 
 
