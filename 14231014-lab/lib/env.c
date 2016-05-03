@@ -86,7 +86,7 @@ int envid2env(u_int envid, struct Env **penv, int checkperm)
 /* Overview:
  *  Mark all environments in 'envs' as free and insert them into the env_free_list.
  *  Insert in reverse order,so that the first call to env_alloc() return envs[0].
- *  
+ *
  * Hints:
  *  You may use these defines to make it:
  *      LIST_INIT,LIST_INSERT_HEAD
@@ -95,13 +95,16 @@ void
 env_init(void)
 {
 	int i;
-    /*Step 1: Initial env_free_list. */
+  /*Step 1: Initial env_free_list. */
+	LIST_INIT( &env_free_list );
 
-
-    /*Step 2: Travel the elements in 'envs', init every element(mainly initial its status, mark it as free)
-     * and inserts them into the env_free_list as reverse order. */
-
-
+  /*Step 2: Travel the elements in 'envs', init every element(mainly initial its status, mark it as free)
+   * and inserts them into the env_free_list as reverse order. */
+	for(i=NENV-1;i>=0;i--)
+	{
+		envs[i].env_status = ENV_FREE;
+		LIST_INSERT_HEAD(&env_free_list, &envs[i], env_link);
+	}
 }
 
 
@@ -120,38 +123,38 @@ env_setup_vm(struct Env *e)
 	struct Page *p = NULL;
 	Pde *pgdir;
 
-    /*Step 1: Allocate a page for the page directory and add its reference.
-     *pgdir is the page directory of Env e. */
+  /*Step 1: Allocate a page for the page directory and add its reference.
+   *pgdir is the page directory of Env e. */
 	if ((r = page_alloc(&p)) < 0) {
 		panic("env_setup_vm - page_alloc error\n");
 		return r;
 	}
 	p->pp_ref++;
 	pgdir = (Pde *)page2kva(p);
-    
-    /*Step 2: Zero pgdir's field before UTOP. */
+
+  /*Step 2: Zero pgdir's field before UTOP. */
 	for (i = 0; i < PDX(UTOP); i++) {
 		pgdir[i] = 0;
 	}
 
-    /*Step 3: Copy kernel's boot_pgdir to pgdir. */
+  /*Step 3: Copy kernel's boot_pgdir to pgdir. */
 
-    /* Hint:
-     *  The VA space of all envs is identical above UTOP
-     *  (except at VPT and UVPT, which we've set below).
-     *  See ./include/mmu.h for layout.
-     *  Can you use boot_pgdir as a template?
-     */
+  /* Hint:
+   *  The VA space of all envs is identical above UTOP
+   *  (except at VPT and UVPT, which we've set below).
+   *  See ./include/mmu.h for layout.
+   *  Can you use boot_pgdir as a template?
+   */
 	for (i = PDX(UTOP); i <= PDX(~0); i++) {
 		pgdir[i] = boot_pgdir[i];
 	}
 	e->env_pgdir = pgdir;
 	e->env_cr3   = PADDR(pgdir);
 
-    /*Step 4: VPT and UVPT map the env's own page table, with
-     *different permissions. */
-    e->env_pgdir[PDX(VPT)]   = e->env_cr3;
-    e->env_pgdir[PDX(UVPT)]  = e->env_cr3 | PTE_V | PTE_R;
+  /*Step 4: VPT and UVPT map the env's own page table, with
+   *different permissions. */
+  e->env_pgdir[PDX(VPT)]   = e->env_cr3;
+  e->env_pgdir[PDX(UVPT)]  = e->env_cr3 | PTE_V | PTE_R;
 	return 0;
 }
 
@@ -180,25 +183,34 @@ env_alloc(struct Env **new, u_int parent_id)
 {
 	int r;
 	struct Env *e;
-    
-    /*Step 1: Get a new Env from env_free_list*/
 
-    
-    /*Step 2: Call certain function(has been implemented) to init kernel memory layout for this new Env.
-     *The function mainly maps the kernel address to this new Env address. */
+  /*Step 1: Get a new Env from env_free_list*/
+	if( (e = LIST_FIRST(&env_free_list)) == NULL )
+		return -E_NO_FREE_ENV;
 
 
-    /*Step 3: Initialize every field of new Env with appropriate values*/
+  /*Step 2: Call certain function(has been implemented) to init kernel memory layout for this new Env.
+   *The function mainly maps the kernel address to this new Env address. */
+	env_setup_vm(e);
+
+  /*Step 3: Initialize every field of new Env with appropriate values*/
+	e->env_id = mkenvid(e);
+	e->env_parent_id = parent_id;
+	e->env_status = ENV_RUNNABLE;
 
 
-    /*Step 4: focus on initializing env_tf structure, located at this new Env. 
-     * especially the sp register,CPU status. */
-    e->env_tf.cp0_status = 0x10001004;
+  /*Step 4: focus on initializing env_tf structure, located at this new Env.
+   * especially the sp register,CPU status. */
+  e->env_tf.cp0_status = 0x10001004;
+	e->env_tf.regs[29] = USTACKTOP;
 
 
-    /*Step 5: Remove the new Env from Env free list*/
+  /*Step 5: Remove the new Env from Env free list*/
+	LIST_REMOVE(e, env_link);
 
+	*new = e;
 
+	return 0;
 }
 
 /* Overview:
@@ -225,16 +237,45 @@ static int load_icode_mapper(u_long va, u_int32_t sgsize,
 	int r;
 	u_long offset = va - ROUNDDOWN(va, BY2PG);
 
+	printf("AlephDebug: =======load_icode_mapper=======\n");
+	printf("AlephDebug: PARA:--------------------------\n");
+  printf("AlephDebug: va = %08lx\n", va);
+  printf("AlephDebug: sgsize = %08lx\n", sgsize);
+  printf("AlephDebug: bin = %08lx\n", bin);
+  printf("AlephDebug: bin_size = %08lx\n", bin_size);
+	printf("AlephDebug: user_data = %08lx\n", user_data);
+
 	/*Step 1: load all content of bin into memory. */
 	for (i = 0; i < bin_size; i += BY2PG) {
 		/* Hint: You should alloc a page and increase the reference count of it. */
+		if( (r = page_alloc(&p)) < 0 )
+			return r;
+		p->pp_ref++;
+
+		bcopy(bin+i, (char *)page2kva(p), BY2PG<(bin_size-i)?BY2PG:(bin_size-i) );
+
+		page_insert(env->env_pgdir, p, va+i, PTE_V|PTE_R);
 	}
 	/*Step 2: alloc pages to reach `sgsize` when `bin_size` < `sgsize`.
     * i has the value of `bin_size` now. */
 	while (i < sgsize) {
+		if( (r = page_alloc(&p)) < 0 )
+			return r;
+		p->pp_ref++;
 
+		page_insert(env->env_pgdir, p, va+i, PTE_V|PTE_R);
 
+		i+=BY2PG;
 	}
+
+	printf("AlephDebug: LOCO_ARG:----------------------\n");
+	printf("AlephDebug: env = %08lx\n", env);
+	printf("AlephDebug: p = %08lx\n", p);
+	printf("AlephDebug: offset = %08lx\n", offset);
+	printf("AlephDebug: OTHER_LOG:----------------------\n");
+	printf("AlephDebug: can BY2PG divide exactly sgsize? %d\n", sgsize%BY2PG==0);
+	printf("AlephDebug: can BY2PG divide exactly bin_size? %d\n", bin_size%BY2PG==0);
+
 	return 0;
 }
 /* Overview:
@@ -244,7 +285,7 @@ static int load_icode_mapper(u_long va, u_int32_t sgsize,
  *  is given by the elf loader. And this function maps one page for the
  *  program's initial stack at virtual address USTACKTOP - BY2PG.
  *
- * Hints: 
+ * Hints:
  *  All mappings are read/write including those of the text segment.
  *  You may use these :
  *      page_alloc, page_insert, page2kva , e->env_pgdir and load_elf.
@@ -261,41 +302,61 @@ load_icode(struct Env *e, u_char *binary, u_int size)
 	struct Page *p = NULL;
 	u_long entry_point;
 	u_long r;
-    u_long perm;
-    
-    /*Step 1: alloc a page. */
+  u_long perm;
 
+	printf("AlephDebug: ===========load_icode==========\n");
+	printf("AlephDebug: PARA:--------------------------\n");
+  printf("AlephDebug: e = %08lx\n", e);
+  printf("AlephDebug: binary = %08lx\n", binary);
+  printf("AlephDebug: size = %08lx\n", size);
 
-    /*Step 2: Use appropriate perm to set initial stack for new Env. */
-    /*Hint: The user-stack should be writable? */
+  /*Step 1: alloc a page. */
+	if( (r = page_alloc(&p)) < 0 )
+		return r;
+	p->pp_ref++;
+  /*Step 2: Use appropriate perm to set initial stack for new Env. */
+  /*Hint: The user-stack should be writable? */
+	perm = PTE_V|PTE_R;
+	page_insert(e->env_pgdir, p, USTACKTOP-BY2PG, perm );
 
+  /*Step 3:load the binary by using elf loader. */
+	load_elf(binary, size, &entry_point, e, load_icode_mapper);
 
-    /*Step 3:load the binary by using elf loader. */
-
-
-    /***Your Question Here***/
-    /*Step 4:Set CPU's PC register as appropriate value. */
+  /***Your Question Here***/
+  /*Step 4:Set CPU's PC register as appropriate value. */
 	e->env_tf.pc = entry_point;
+
+	printf("AlephDebug: LOCO_ARG:----------------------\n");
+	printf("AlephDebug: p = %08lx\n", p);
+	printf("AlephDebug: entry_point = %08lx\n", entry_point);
+	printf("AlephDebug: perm = %08lx\n", perm);
+	printf("AlephDebug: OTHER_LOG:----------------------\n");
+	printf("AlephDebug: can BY2PG divide exactly size? %d\n", size%BY2PG==0);
 }
 
 /* Overview:
- *  Allocates a new env with env_alloc, loads te named elf binary into 
+ *  Allocates a new env with env_alloc, loads te named elf binary into
  *  it with load_icode. This function is ONLY called during kernel
  *  initialization, before running the first user_mode environment.
  *
- * Hints: 
+ * Hints:
  *  this function wrap the env_alloc and load_icode function.
  */
 void
 env_create(u_char *binary, int size)
 {
 	struct Env *e;
-    /*Step 1: Use env_alloc to alloc a new env. */
 
+	printf("AlephDebug: ===========env_create==========\n");
+	printf("AlephDebug: PARA:--------------------------\n");
+  printf("AlephDebug: binary = %08lx\n", binary);
+  printf("AlephDebug: size = %08lx\n", size);
 
-    /*Step 2: Use load_icode() to load the named elf binary. */
+  /*Step 1: Use env_alloc to alloc a new env. */
+	env_alloc(&e);
 
-
+  /*Step 2: Use load_icode() to load the named elf binary. */
+	load_icode(e, binary, size);
 }
 
 /* Overview:
@@ -339,7 +400,7 @@ env_free(struct Env *e)
 }
 
 /* Overview:
- *  Frees env e, and schedules to run a new env 
+ *  Frees env e, and schedules to run a new env
  *  if e is the current env.
  */
 void
@@ -378,20 +439,19 @@ void
 env_run(struct Env *e)
 {
 	/*Step 1: save register state of curenv. */
-    /* Hint: if there is a environment running,you should do
-    *  context switch.You can imitate env_destroy() 's behaviors.*/
+  /* Hint: if there is a environment running,you should do
+  *  context switch.You can imitate env_destroy() 's behaviors.*/
 
 
-    /*Step 2: Set 'curenv' to the new environment. */
+  /*Step 2: Set 'curenv' to the new environment. */
 
 
-    /*Step 3: Use lcontext() to switch to its address space. */
+  /*Step 3: Use lcontext() to switch to its address space. */
 
 
-    /*Step 4: Use env_pop_tf() to restore the environment's
-     * environment   registers and drop into user mode in the
-     * the   environment.
-     */
-    /* Hint: You should use GET_ENV_ASID there.Think why? */
-
+  /*Step 4: Use env_pop_tf() to restore the environment's
+   * environment   registers and drop into user mode in the
+   * the   environment.
+   */
+  /* Hint: You should use GET_ENV_ASID there.Think why? */
 }
