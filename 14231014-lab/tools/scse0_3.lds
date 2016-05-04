@@ -8,11 +8,11 @@ SECTIONS
 
 {
 
-. = 0x80000080;
-.except_vec3 : {
-   *(.text.exc)
-}
 
+ . = 0x80000080;
+.except_vec3 : {
+    *(.text.exc_vec3)
+}
 . =0x80200000;
 
 .text :{
