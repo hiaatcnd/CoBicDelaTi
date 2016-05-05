@@ -274,7 +274,10 @@ static int load_icode_mapper(u_long va, u_int32_t sgsize,
 			return r;
 		//p->pp_ref++; //我应该在这里增加引用数吗？
 
-		bcopy(bin+i, (char *)page2kva(p), BY2PG<(bin_size-i)?BY2PG:(bin_size-i) );
+		if( i == 0 )
+			bcopy(bin+i, (char *)page2kva(p) + offset, (BY2PG-offset)<(bin_size-i)?(BY2PG-offset):(bin_size-i) );
+		else
+			bcopy(bin+i-offset, (char *)page2kva(p), BY2PG<(bin_size-i)?BY2PG:(bin_size-i) );
 
 		page_insert(env->env_pgdir, p, va+i, PTE_V|PTE_R);
 	}
@@ -331,7 +334,7 @@ load_icode(struct Env *e, u_char *binary, u_int size)
   /*Step 1: alloc a page. */
 	if( (r = page_alloc(&p)) < 0 )
 		return r;
-	p->pp_ref++;
+	//p->pp_ref++;
   /*Step 2: Use appropriate perm to set initial stack for new Env. */
   /*Hint: The user-stack should be writable? */
 	perm = PTE_V|PTE_R;

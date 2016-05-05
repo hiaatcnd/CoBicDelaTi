@@ -13,11 +13,21 @@
  */
 void sched_yield(void)
 {
+  //printf("AlephDebug: ==========sched_yield==========\n");
   static int env_i = 0;
 	int ti, i;
 
-	for (env_i = 0;; env_i = (env_i+1)%NENV) {
+	while(1)
+  {
+    env_i = (env_i+1)%NENV;
 		if (envs[env_i].env_status == ENV_RUNNABLE)
-				env_run(&envs[env_i]);
+    {
+      //printf("AlephDebug: Call Env #%d\n",env_i);
+      env_run(&envs[env_i]);
+    }
+    else
+    {
+      //printf("AlephDebug: Call Env #%d\n Fail",env_i);
+    }
 	}
 }

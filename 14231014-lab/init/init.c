@@ -34,10 +34,14 @@ void mips_init()
 	//printf("AlephDebug: binary_user_B_start = %08lx\n", binary_user_B_start);
 	//printf("AlephDebug: &binary_user_B_size = %08lx\n", &binary_user_B_size);
 
+	//printf("AlephDebug: CALL TRAP_INIT()\n");
 	trap_init();
-	//kclock_init();
+	//printf("AlephDebug: END TRAP_INIT()\n");
+	//printf("AlephDebug: CALL KCLOCK_INIT()\n");
+	kclock_init();
+	//printf("AlephDebug: END KCLOCK_INIT()\n");
 
-	env_run(&envs[0]);
+	//env_run(&envs[0]);
 	//env_run(&envs[1]);
 
 	panic("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
