@@ -80,7 +80,7 @@ typedef struct {
 /* Fields in the e_ident array.  The EI_* macros are indices into the
    array.  The macros under each EI_* macro are the values the byte
    may have.  */
- 
+
 #define EI_MAG0		0		/* File identification byte 0 index */
 #define ELFMAG0		0x7f		/* Magic number byte 0 */
 
@@ -133,3 +133,4 @@ int load_elf(u_char *binary, int size,
 			 int (*map)(u_long, u_int32_t, u_char *, u_int32_t, void *));
 
 #endif /* kerelf.h */
+
