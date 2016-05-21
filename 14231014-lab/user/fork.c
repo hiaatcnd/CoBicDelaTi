@@ -11,8 +11,8 @@
  * 	Copy `len` bytes from `src` to `dst`.
  *
  * Pre-Condition:
- * 	`src` and `dst` can't be NULL. Also, the `src` area 
- * 	 shouldn't overlap the `dest`, otherwise the behavior of this 
+ * 	`src` and `dst` can't be NULL. Also, the `src` area
+ * 	 shouldn't overlap the `dest`, otherwise the behavior of this
  * 	 function is undefined.
  */
 void user_bcopy(const void *src, void *dst, size_t len)
@@ -42,14 +42,14 @@ void user_bcopy(const void *src, void *dst, size_t len)
 }
 
 /* Overview:
- * 	Sets the first n bytes of the block of memory 
+ * 	Sets the first n bytes of the block of memory
  * pointed by `v` to zero.
- * 
+ *
  * Pre-Condition:
  * 	`v` must be valid.
  *
  * Post-Condition:
- * 	the content of the space(from `v` to `v`+ n) 
+ * 	the content of the space(from `v` to `v`+ n)
  * will be set to zero.
  */
 void user_bzero(void *v, u_int n)
@@ -69,13 +69,13 @@ void user_bzero(void *v, u_int n)
 /* Overview:
  * 	Custom page fault handler - if faulting page is copy-on-write,
  * map in our own private writable copy.
- * 
+ *
  * Pre-Condition:
  * 	`va` is the address which leads to a TLBS exception.
  *
  * Post-Condition:
  *  Launch a user_panic if `va` is not a copy-on-write page.
- * Otherwise, this handler should map a private writable copy of 
+ * Otherwise, this handler should map a private writable copy of
  * the faulting page at correct address.
  */
 static void
@@ -83,28 +83,28 @@ pgfault(u_int va)
 {
 	u_int *tmp;
 	//	writef("fork.c:pgfault():\t va:%x\n",va);
-    
+
     //map the new page at a temporary place
 
 	//copy the content
-	
+
     //map the page on the appropriate place
-	
+
     //unmap the temporary place
-	
+
 }
 
 /* Overview:
  * 	Map our virtual page `pn` (address pn*BY2PG) into the target `envid`
- * at the same virtual address. 
+ * at the same virtual address.
  *
  * Post-Condition:
- *  if the page is writable or copy-on-write, the new mapping must be 
- * created copy on write and then our mapping must be marked 
+ *  if the page is writable or copy-on-write, the new mapping must be
+ * created copy on write and then our mapping must be marked
  * copy on write as well. In another word, both of the new mapping and
- * our mapping should be copy-on-write if the page is writable or 
+ * our mapping should be copy-on-write if the page is writable or
  * copy-on-write.
- * 
+ *
  * Hint:
  * 	PTE_LIBRARY indicates that the page is shared between processes.
  * A page with PTE_LIBRARY may have PTE_R at the same time. You
@@ -114,9 +114,9 @@ static void
 duppage(u_int envid, u_int pn)
 {
 	/* Note:
-	 *  I am afraid I have some bad news for you. There is a ridiculous, 
-	 * annoying and awful bug here. I could find another more adjectives 
-	 * to qualify it, but you have to reproduce it to understand 
+	 *  I am afraid I have some bad news for you. There is a ridiculous,
+	 * annoying and awful bug here. I could find another more adjectives
+	 * to qualify it, but you have to reproduce it to understand
 	 * how disturbing it is.
 	 * 	To reproduce this bug, you should follow the steps bellow:
 	 * 	1. uncomment the statement "writef("");" bellow.
@@ -124,9 +124,9 @@ duppage(u_int envid, u_int pn)
 	 * 	3. lauch Gxemul and check the result.
 	 * 	4. you can add serveral `writef("");` and repeat step2~3.
 	 * 	Then, you will find that additional `writef("");` may lead to
-	 * a kernel panic. Interestingly, some students, who faced a strange 
+	 * a kernel panic. Interestingly, some students, who faced a strange
 	 * kernel panic problem, found that adding a `writef("");` could solve
-	 * the problem. 
+	 * the problem.
 	 *  Unfortunately, we cannot find the code which leads to this bug,
 	 * although we have debugged it for serveral weeks. If you face this
 	 * bug, we would like to say "Good luck. God bless."
@@ -144,8 +144,8 @@ duppage(u_int envid, u_int pn)
  *
  * Hint: use vpd, vpt, and duppage.
  * Hint: remember to fix "env" in the child process!
- * Note: `set_pgfault_handler`(user/pgfault.c) is different from 
- *       `syscall_set_pgfault_handler`. 
+ * Note: `set_pgfault_handler`(user/pgfault.c) is different from
+ *       `syscall_set_pgfault_handler`.
  */
 extern void __asm_pgfault_handler(void);
 int
@@ -159,10 +159,19 @@ fork(void)
 
 
 	//The parent installs pgfault using set_pgfault_handler
-
+	set_pgfault_handler(pgfault);
 	//alloc a new alloc
-
-
+	newenvid = syscall_env_alloc();
+	if( newenvid == 0 ) {
+		env = &envs[ENVX(syscall_getenvid())];
+	}
+	else if( newenvid > 0 ) {
+		for (i = 0; i < UTOP - BY2PG; i+=BY2PG) {
+			if (((*vpd)[i / PDMAP]) != 0 && ((*vpt)[i]) != 0) {	//这里有个问题「.word」到底是什么功能？
+				duppage(newenvid, i);
+			}
+		}
+	}
 	return newenvid;
 }
 

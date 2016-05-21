@@ -143,6 +143,8 @@ typedef u_long Pte;
 extern volatile Pte *vpt[];
 extern volatile Pde *vpd[];
 
+//extern volatile unsigned int *ALEPH;//Aleph Debug
+
 // translates from kernel virtual address to physical address.
 #define PADDR(kva)						\
 	({								\

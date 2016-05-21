@@ -63,6 +63,10 @@ u_int sys_getenvid(void)
  */
 void sys_yield(void)
 {
+	bcopy((void *)KERNEL_SP - sizeof(struct Trapframe),
+			(void *)TIMESTACK - sizeof(struct Trapframe),
+			sizeof(struct Trapframe));
+	sched_yield();
 }
 
 /* Overview:
@@ -213,6 +217,20 @@ int sys_env_alloc(void)
 	int r;
 	struct Env *e;
 
+	/*创建一个新的进程*/
+	if ((r = env_alloc(&e, curenv->env_id)) < 0) {
+		return r;
+	}
+
+	/*将父进程的上下文复制给子进程，并且修改返回pc，参考env.c*/
+	bcopy(KERNEL_SP - sizeof(struct Trapframe), &e->env_tf, sizeof(struct Trapframe));
+	e->env_tf.pc = e->env_tf.cp0_epc;
+
+	/*修改返回值寄存器v0*/
+	e->env_tf.regs[2] = 0;
+
+	/*把运行状态设置为ENV_NOT_RUNNABLE*/
+	e->env_status = ENV_NOT_RUNNABLE;
 
 	return e->env_id;
 	//	panic("sys_env_alloc not implemented");
@@ -288,7 +306,14 @@ void sys_panic(int sysno, char *msg)
  */
 void sys_ipc_recv(int sysno, u_int dstva)
 {
-	
+	/*正准备接受其他进程的消息*/
+	curenv->env_ipc_recving = 1;
+	/*阻塞当前进程*/
+	curenv->env_status = ENV_NOT_RUNNABLE;
+	/*记录接受数据的虚拟地址*/
+	curenv->env_ipc_dstva = dstva;
+	/*切换进程*/
+	sys_yield();
 }
 
 /* Overview:
@@ -308,13 +333,38 @@ void sys_ipc_recv(int sysno, u_int dstva)
  *
  * Hint: the only function you need to call is envid2env.
  */
-int sys_ipc_can_send(int sysno, u_int envid, u_int value, u_int srcva,
-					 u_int perm)
+int sys_ipc_can_send(int sysno, u_int envid, u_int value, u_int srcva, u_int perm)
 {
-
 	int r;
 	struct Env *e;
 	struct Page *p;
+
+	/*获取进程控制块*/
+	envid2env(envid, &e, 0);
+
+	/*看看接收的进程是否准备完毕*/
+	if((e->env_ipc_recving)==0)	{
+		return -E_IPC_NOT_RECV;
+	}
+
+	/*找一找发出去的数据在哪个页面*/
+	p = page_lookup(curenv->env_pgdir, srcva, 0);
+
+	/*把接收数据的地方做个映射*/
+	if( (r = page_insert(e->env_pgdir, p, e->env_ipc_dstva, perm)) < 0 ){
+		return r;
+	}
+
+	/*设置权限位*/
+	e->env_ipc_perm = perm;
+	/*将接收就绪设回0*/
+	e->env_ipc_recving = 0;
+	/*是从当前这个进程收到的信息*/
+	e->env_ipc_from = curenv->env_id;
+	/*这个value是干啥的？*/
+	e->env_ipc_value = value;
+	/*重新设为可运行*/
+	e->env_status = ENV_RUNNABLE;
 
 	return 0;
 }

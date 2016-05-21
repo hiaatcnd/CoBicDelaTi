@@ -17,6 +17,14 @@ static struct Env_list env_free_list;	// Free list
 extern Pde *boot_pgdir;
 extern char *KERNEL_SP;
 
+/*//Aleph Debug
+void aleph(){
+	printf("%lx\n",ALEPH);
+	printf("%lx\n",*ALEPH);
+	panic("~~~~~~~~~");
+}
+*/
+
 
 /* Overview:
  *  This function is for making an unique ID for every env.
