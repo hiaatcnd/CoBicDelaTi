@@ -142,7 +142,7 @@ duppage(u_int envid, u_int pn)
 	perm = vpt[0][pn] & 0xfff;
 	addr = pn * BY2PG;
 
-	if ((perm & PTE_R) != 0 || (perm & PTE_COW) != 0) {
+	if ((perm & PTE_V) && ((perm & PTE_R) != 0 || (perm & PTE_COW) != 0)) {
 		syscall_mem_map(0, addr, envid, addr, perm | PTE_COW); /*envid2env的时候，如果envid是0，则代表当前进程*/
 		syscall_mem_map(0, addr, 0, addr, perm | PTE_COW);
 	}
