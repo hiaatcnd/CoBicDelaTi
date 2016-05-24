@@ -63,9 +63,7 @@ u_int sys_getenvid(void)
  */
 void sys_yield(void)
 {
-	bcopy((void *)KERNEL_SP - sizeof(struct Trapframe),
-			(void *)TIMESTACK - sizeof(struct Trapframe),
-			sizeof(struct Trapframe));
+	bcopy((void *)KERNEL_SP - sizeof(struct Trapframe), (void *)TIMESTACK - sizeof(struct Trapframe), sizeof(struct Trapframe));
 	sched_yield();
 }
 
@@ -116,8 +114,13 @@ int sys_set_pgfault_handler(int sysno, u_int envid, u_int func, u_int xstacktop)
 	int ret;
 
 
+	if ((ret = envid2env(envid, &env, 0)) < 0) {
+		return ret;
+	}
+
+	env->env_pgfault_handler = func;
+	env->env_xstacktop = xstacktop;
 	return 0;
-	//	panic("sys_set_pgfault_handler not implemented");
 }
 
 /* Overview:
@@ -145,6 +148,25 @@ int sys_mem_alloc(int sysno, u_int envid, u_int va, u_int perm)
 	int ret;
 	ret = 0;
 
+	if ( va < 0 || va >= UTOP || !(perm & PTE_V) || (perm & PTE_COW)) {
+		return -E_INVAL;
+	}
+
+	if ((ret = envid2env(envid, &env, 0)) < 0) {
+		return ret;
+	}
+
+	if ((ret = page_alloc(&ppage)) < 0) {
+		return ret;
+	}
+
+	bzero((void *)page2kva(ppage), BY2PG);
+
+	if ((ret = page_insert(env->env_pgdir, ppage, va, perm)) < 0) {
+		return ret;
+	}
+
+	return ret;
 }
 
 /* Overview:
@@ -175,7 +197,28 @@ int sys_mem_map(int sysno, u_int srcid, u_int srcva, u_int dstid, u_int dstva,
 	round_srcva = ROUNDDOWN(srcva, BY2PG);
 	round_dstva = ROUNDDOWN(dstva, BY2PG);
 
-    //your code here
+  //your code here
+	if ( srcva < 0 || srcva > UTOP || dstva < 0 || dstva > UTOP || !(perm & PTE_V)) {
+		return -E_INVAL;
+	}
+
+	if ((ret = envid2env(srcid, &srcenv, 0)) < 0) {
+		return ret;
+	}
+
+	if ((ret = envid2env(dstid, &dstenv, 0)) < 0) {
+		return ret;
+	}
+
+	ppage = page_lookup(srcenv->env_pgdir, round_srcva, &ppte);
+
+	if (ppage == 0) {
+		return -E_INVAL;
+	}
+
+	if ((ret = page_insert(dstenv->env_pgdir, ppage, round_dstva, perm)) < 0) {
+		return ret;
+	}
 
 	return ret;
 }
@@ -194,6 +237,14 @@ int sys_mem_unmap(int sysno, u_int envid, u_int va)
 	// Your code here.
 	int ret;
 	struct Env *env;
+
+	ret = 0;
+
+	if ((ret = envid2env(envid, &env, 0)) < 0) {
+		return ret;
+	}
+
+	page_remove(env->env_pgdir, va);
 
 	return ret;
 	//	panic("sys_mem_unmap not implemented");
@@ -253,6 +304,16 @@ int sys_set_env_status(int sysno, u_int envid, u_int status)
 	// Your code here.
 	struct Env *env;
 	int ret;
+
+	if ((status != ENV_RUNNABLE) && (status != ENV_NOT_RUNNABLE) && (status != ENV_FREE)) {
+		return -E_INVAL;
+	}
+
+	if ((ret = envid2env(envid, &env, 0)) < 0) {
+		return ret;
+	}
+
+	env->env_status = status;
 
 	return 0;
 	//	panic("sys_env_set_status not implemented");
@@ -343,18 +404,21 @@ int sys_ipc_can_send(int sysno, u_int envid, u_int value, u_int srcva, u_int per
 	envid2env(envid, &e, 0);
 
 	/*看看接收的进程是否准备完毕*/
-	if((e->env_ipc_recving)==0)	{
+	if( !(e->env_ipc_recving) )	{
 		return -E_IPC_NOT_RECV;
 	}
 
+
 	/*找一找发出去的数据在哪个页面*/
-	p = page_lookup(curenv->env_pgdir, srcva, 0);
+	if ( (p = page_lookup(curenv->env_pgdir, srcva, 0)) <= 0 ) {
 
-	/*把接收数据的地方做个映射*/
-	if( (r = page_insert(e->env_pgdir, p, e->env_ipc_dstva, perm)) < 0 ){
-		return r;
 	}
-
+	else {
+		/*把接收数据的地方做个映射*/
+		if( (r = page_insert(e->env_pgdir, p, e->env_ipc_dstva, perm)) < 0 ){
+			return r;
+		}
+	}
 	/*设置权限位*/
 	e->env_ipc_perm = perm;
 	/*将接收就绪设回0*/

@@ -81,19 +81,21 @@ void user_bzero(void *v, u_int n)
 static void
 pgfault(u_int va)
 {
-	u_int perm = vpt[0][VPN(va)] & 0xfff;
+	u_int temp = 0x50000000;
+	u_int perm = (*vpt)[VPN(va)] & 0xfff;
 	//	writef("fork.c:pgfault():\t va:%x\n",va);
 	if (perm & PTE_COW) {
 		//map the new page at a temporary place
-		syscall_mem_alloc(0, BY2PG, perm & (!PTE_COW)); //保留其他权限
+		syscall_mem_alloc(0, temp, perm & (~PTE_COW)); //保留其他权限
+
+		//copy the content
+		user_bcopy((void *)ROUNDDOWN(va, BY2PG), (void *)temp, BY2PG);
+	  //map the page on the appropriate place
+		syscall_mem_map(0, temp, 0, va, perm & (~PTE_COW)); //保留其他权限
+	  //unmap the temporary place
+	  syscall_mem_unmap(0, temp);
 	}
-
-	//copy the content
-
-    //map the page on the appropriate place
-
-    //unmap the temporary place
-
+	return ;
 }
 
 /* Overview:
@@ -181,8 +183,8 @@ fork(void)
 	}
 	else if( newenvid > 0 ) {
 		for (i = 0; i < UTOP - BY2PG; i+=BY2PG) {
-			if ((vpd[0][i / PDMAP]) != 0 && (vpt[0][i / BY2PG]) != 0) {	//这里有个问题「.word」到底是什么功能？
-				duppage(newenvid, i);
+			if (((*vpd)[i / PDMAP]) != 0 && ((*vpt)[i / BY2PG]) != 0) {	//这里有个问题「.word」到底是什么功能？
+				duppage(newenvid, i / BY2PG);
 			}
 		}
 		if (syscall_mem_alloc(newenvid, UXSTACKTOP - BY2PG, PTE_V | PTE_R) < 0) {
