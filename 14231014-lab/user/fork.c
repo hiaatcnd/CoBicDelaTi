@@ -81,10 +81,12 @@ void user_bzero(void *v, u_int n)
 static void
 pgfault(u_int va)
 {
-	u_int *tmp;
+	u_int perm = vpt[0][VPN(va)] & 0xfff;
 	//	writef("fork.c:pgfault():\t va:%x\n",va);
-
-    //map the new page at a temporary place
+	if (perm & PTE_COW) {
+		//map the new page at a temporary place
+		syscall_mem_alloc(0, BY2PG, perm & (!PTE_COW)); //保留其他权限
+	}
 
 	//copy the content
 
@@ -135,6 +137,18 @@ duppage(u_int envid, u_int pn)
 	u_int addr;
 	u_int perm;
 
+	perm = vpt[0][pn] & 0xfff;
+	addr = pn * BY2PG;
+
+	if ((perm & PTE_R) != 0 || (perm & PTE_COW) != 0) {
+		syscall_mem_map(0, addr, envid, addr, perm | PTE_COW); /*envid2env的时候，如果envid是0，则代表当前进程*/
+		syscall_mem_map(0, addr, 0, addr, perm | PTE_COW);
+	}
+	else {
+		syscall_mem_map(0, addr, envid, addr, perm);
+	}
+
+	return;
 	//	user_panic("duppage not implemented");
 }
 
@@ -167,10 +181,15 @@ fork(void)
 	}
 	else if( newenvid > 0 ) {
 		for (i = 0; i < UTOP - BY2PG; i+=BY2PG) {
-			if (((*vpd)[i / PDMAP]) != 0 && ((*vpt)[i]) != 0) {	//这里有个问题「.word」到底是什么功能？
+			if ((vpd[0][i / PDMAP]) != 0 && (vpt[0][i / BY2PG]) != 0) {	//这里有个问题「.word」到底是什么功能？
 				duppage(newenvid, i);
 			}
 		}
+		if (syscall_mem_alloc(newenvid, UXSTACKTOP - BY2PG, PTE_V | PTE_R) < 0) {
+			return -E_NO_MEM;
+		}
+		syscall_set_pgfault_handler(newenvid, __asm_pgfault_handler, UXSTACKTOP);
+		syscall_set_env_status(newenvid, ENV_RUNNABLE);
 	}
 	return newenvid;
 }
