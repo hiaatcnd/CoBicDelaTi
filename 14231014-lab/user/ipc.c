@@ -49,3 +49,47 @@ ipc_recv(u_int *whom, u_int dstva, u_int *perm)
 	return env->env_ipc_value;
 }
 
+void new_ipc_send(u_int whom, u_int val, u_int srcva, u_int perm) {
+
+	int r;
+	int ack;
+	int sender = 0;
+	u_int temp = 0;
+
+	ipc_send(whom, val, srcva, perm);
+
+	/*
+	if ((r =	syscall_mem_alloc(0, temp, PTE_V | PTE_R) {
+		user_panic("syscall_mem_alloc error : %d\n", r );
+	}
+	*/
+
+	ack = ipc_recv(&sender, temp, 0);
+
+	if(ack == val + 1) {
+		ipc_send(whom, val, srcva, perm);
+	}
+	else {
+		writef("ALEPH_DEBUG: ack error!\n");
+	}
+}
+
+u_int new_ipc_recv(u_int *whom, u_int dstva, u_int *perm) {
+
+	int r;
+	int rec = 0;
+	int check = -1;
+	u_int temp = 0;
+
+	rec = ipc_recv(whom, dstva, perm);
+
+	ipc_send(*whom, rec + 1, temp, 0);
+
+	if((check = ipc_recv(whom, dstva, perm)) == rec) {
+		return env->env_ipc_value;
+	}
+	else {
+		user_panic("ALEPH_DEBUG: recv error");
+	}
+	return -10086;
+}
