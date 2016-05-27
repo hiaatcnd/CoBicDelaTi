@@ -83,17 +83,23 @@ pgfault(u_int va)
 {
 	u_int temp = 0x50000000;
 	u_int perm = (*vpt)[VPN(va)] & 0xfff;
+	int r;
 	//	writef("fork.c:pgfault():\t va:%x\n",va);
 	if (perm & PTE_COW) {
 		//map the new page at a temporary place
-		syscall_mem_alloc(0, temp, perm & (~PTE_COW)); //保留其他权限
-
+		if ((r =	syscall_mem_alloc(0, temp, perm & (~PTE_COW))) < 0) { /*这里保留一下其他权限*/
+			user_panic("syscall_mem_alloc error : %d\n", r );
+		}
 		//copy the content
 		user_bcopy((void *)ROUNDDOWN(va, BY2PG), (void *)temp, BY2PG);
 	  //map the page on the appropriate place
-		syscall_mem_map(0, temp, 0, va, perm & (~PTE_COW)); //保留其他权限
+	  if ((r = syscall_mem_map(0, temp, 0, va, perm & (~PTE_COW))) < 0) { /*这里保留一下其他权限*/
+			user_panic("syscall_mem_map error : %d\n", r );
+		}
 	  //unmap the temporary place
-	  syscall_mem_unmap(0, temp);
+	  if ((r = syscall_mem_unmap(0, temp)) < 0) {
+			user_panic("syscall_mem_unmap error : %d\n", r );
+		}
 	}
 	return ;
 }
@@ -138,16 +144,23 @@ duppage(u_int envid, u_int pn)
 	// writef("");
 	u_int addr;
 	u_int perm;
+	int r;
 
 	perm = vpt[0][pn] & 0xfff;
 	addr = pn * BY2PG;
 
 	if ((perm & PTE_V) && ((perm & PTE_R) != 0 || (perm & PTE_COW) != 0)) {
-		syscall_mem_map(0, addr, envid, addr, perm | PTE_COW); /*envid2env的时候，如果envid是0，则代表当前进程*/
-		syscall_mem_map(0, addr, 0, addr, perm | PTE_COW);
+		if ((r = syscall_mem_map(0, addr, envid, addr, perm | PTE_COW)) < 0) {
+			user_panic("syscall_mem_map son error : %d\n", r );
+		}
+		if ((r = syscall_mem_map(0, addr, 0, addr, perm | PTE_COW)) < 0) { /*envid2env的时候，如果envid是0，则代表当前进程*/
+			user_panic("syscall_mem_map father error : %d\n", r );
+		}
 	}
 	else {
-		syscall_mem_map(0, addr, envid, addr, perm);
+		if ((r = syscall_mem_map(0, addr, envid, addr, perm)) < 0) {
+			user_panic("syscall_mem_map son error : %d\n", r );
+		}
 	}
 
 	return;
@@ -172,7 +185,7 @@ fork(void)
 	extern struct Env *envs;
 	extern struct Env *env;
 	u_int i;
-
+	int r;
 
 	//The parent installs pgfault using set_pgfault_handler
 	set_pgfault_handler(pgfault);
@@ -190,8 +203,12 @@ fork(void)
 		if (syscall_mem_alloc(newenvid, UXSTACKTOP - BY2PG, PTE_V | PTE_R) < 0) {
 			return -E_NO_MEM;
 		}
-		syscall_set_pgfault_handler(newenvid, __asm_pgfault_handler, UXSTACKTOP);
-		syscall_set_env_status(newenvid, ENV_RUNNABLE);
+		if ((r = syscall_set_pgfault_handler(newenvid, __asm_pgfault_handler, UXSTACKTOP)) < 0) {
+			return r;
+		}
+		if ((r = syscall_set_env_status(newenvid, ENV_RUNNABLE)) < 0) {
+			return r;
+		}
 	}
 	return newenvid;
 }

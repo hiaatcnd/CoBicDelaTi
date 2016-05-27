@@ -182,8 +182,7 @@ int sys_mem_alloc(int sysno, u_int envid, u_int va, u_int perm)
  * Note:
  * 	Cannot access pages above UTOP.
  */
-int sys_mem_map(int sysno, u_int srcid, u_int srcva, u_int dstid, u_int dstva,
-				u_int perm)
+int sys_mem_map(int sysno, u_int srcid, u_int srcva, u_int dstid, u_int dstva, u_int perm)
 {
 	int ret;
 	u_int round_srcva, round_dstva;
@@ -333,7 +332,14 @@ int sys_set_env_status(int sysno, u_int envid, u_int status)
  */
 int sys_set_trapframe(int sysno, u_int envid, struct Trapframe *tf)
 {
+	struct Env *env;
+	int ret;
 
+	if ((ret = envid2env(envid, &env, 0)) < 0) {
+		return ret;
+	}
+
+	env->env_tf = *tf;
 	return 0;
 }
 
@@ -401,7 +407,9 @@ int sys_ipc_can_send(int sysno, u_int envid, u_int value, u_int srcva, u_int per
 	struct Page *p;
 
 	/*获取进程控制块*/
-	envid2env(envid, &e, 0);
+	if ( (r = envid2env(envid, &e, 0)) < 0) {
+		return r;
+	}
 
 	/*看看接收的进程是否准备完毕*/
 	if( !(e->env_ipc_recving) )	{
