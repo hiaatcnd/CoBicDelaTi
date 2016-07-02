@@ -65,9 +65,8 @@ int envid2env(u_int envid, struct Env **penv, int checkperm)
 {
 	struct Env *e;
 
-  /* Hint:
-   *  If envid is zero, return the current environment.
-   *  蜜汁细节 */
+    /* Hint:
+     *  If envid is zero, return the current environment.*/
 	if (envid == 0) {
 		*penv = curenv;
 		return 0;

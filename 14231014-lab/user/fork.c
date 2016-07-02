@@ -204,10 +204,10 @@ fork(void)
 			return -E_NO_MEM;
 		}
 		if ((r = syscall_set_pgfault_handler(newenvid, __asm_pgfault_handler, UXSTACKTOP)) < 0) {
-			return r;
+			//return r;
 		}
 		if ((r = syscall_set_env_status(newenvid, ENV_RUNNABLE)) < 0) {
-			return r;
+			//return r;
 		}
 	}
 	return newenvid;
