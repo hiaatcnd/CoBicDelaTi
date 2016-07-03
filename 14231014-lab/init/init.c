@@ -22,7 +22,9 @@ void mips_init()
 	 * interesting, have fun please*/
 	//ENV_CREATE(user_A);
 	//ENV_CREATE(user_B);
-	ENV_CREATE(user_pingpong);
+	//ENV_CREATE(user_pingpong);
+	//ENV_CREATE(user_idle);
+	ENV_CREATE(fs_serv);
 
 	//extern u_char binary_user_A_start[];
 	//extern u_int  binary_user_A_size;

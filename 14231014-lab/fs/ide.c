@@ -60,9 +60,9 @@ ide_write(u_int diskno, u_int secno, void *src, u_int nsecs)
 	int offset = 0;
 	writef("diskno: %d\n", diskno);
 	while (offset_begin + offset < offset_end) {
+		// copy data from source array to disk buffer.
+		user_bcopy(src + offset, (void *)0x93004000, 0x200);
 		if (write_sector(diskno, offset_begin + offset)) {
-			// copy data from source array to disk buffer.
-			user_bcopy(src + offset, (void *)0x93004000, 0x200);
 			offset += 0x200;
 		} else {
 			// if error occur, then panic.
