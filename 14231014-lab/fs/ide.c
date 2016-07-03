@@ -19,7 +19,7 @@ extern int write_sector(int diskno, int offset);
 // 	nsecs: the number of sectors to read.
 //
 // Post-Condition:
-// 	If error occurred during read the IDE disk, panic.
+// 	If error occurred during read the IDE disk, panic. 
 void
 ide_read(u_int diskno, u_int secno, void *dst, u_int nsecs)
 {
@@ -55,18 +55,14 @@ ide_read(u_int diskno, u_int secno, void *dst, u_int nsecs)
 void
 ide_write(u_int diskno, u_int secno, void *src, u_int nsecs)
 {
-	int offset_begin = secno * 0x200;
-	int offset_end = offset_begin + nsecs * 0x200;
-	int offset = 0;
+	int offset_begin = ;
+	int offset_end = ;
+	int offset = ;
 	writef("diskno: %d\n", diskno);
-	while (offset_begin + offset < offset_end) {
+	while ( < ) {
 		// copy data from source array to disk buffer.
-		user_bcopy(src + offset, (void *)0x93004000, 0x200);
-		if (write_sector(diskno, offset_begin + offset)) {
-			offset += 0x200;
-		} else {
-			// if error occur, then panic.
-			user_panic("disk I/O error");
-		}
+
+        // if error occur, then panic.
 	}
 }
+

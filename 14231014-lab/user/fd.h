@@ -4,11 +4,12 @@
 #include <types.h>
 #include <fs.h>
 
-// pre-declare for forward references
+// Pre-declare for forward references
 struct Fd;
 struct Stat;
 struct Dev;
 
+// Device.
 struct Dev {
 	int dev_id;
 	char *dev_name;
@@ -19,6 +20,7 @@ struct Dev {
 	int (*dev_seek)(struct Fd *, u_int);
 };
 
+// File descriptor.
 struct Fd {
 	u_int fd_dev_id;
 	u_int fd_offset;
@@ -43,11 +45,9 @@ int fd_lookup(int fdnum, struct Fd **fd);
 u_int fd2data(struct Fd *);
 int fd2num(struct Fd *);
 int dev_lookup(int dev_id, struct Dev **dev);
-int
-num2fd(int fd);
+int num2fd(int fd);
 extern struct Dev devcons;
 extern struct Dev devfile;
 extern struct Dev devpipe;
-
 
 #endif

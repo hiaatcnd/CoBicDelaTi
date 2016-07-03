@@ -116,8 +116,7 @@ END(handle_sys)
     .word sys_panic
     .word sys_ipc_can_send
     .word sys_ipc_recv
-    .word sys_cgetc
-    
+       
 .endm
 EXPORT(sys_call_table)
 

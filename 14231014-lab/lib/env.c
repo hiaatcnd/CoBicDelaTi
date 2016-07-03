@@ -1,5 +1,5 @@
-/* Notes written by Qian Liu <qianlxc@outlook.com>
-  If you find any bug, please contact with me.*/
+/* Notes written by Qian Liu <qianlxc@126.com> 
+  If you find any bug,please contact this email.*/
 
 #include <mmu.h>
 #include <error.h>
@@ -17,14 +17,6 @@ static struct Env_list env_free_list;	// Free list
 extern Pde *boot_pgdir;
 extern char *KERNEL_SP;
 
-/*//Aleph Debug
-void aleph(){
-	printf("%lx\n",ALEPH);
-	printf("%lx\n",*ALEPH);
-	panic("~~~~~~~~~");
-}
-*/
-
 
 /* Overview:
  *  This function is for making an unique ID for every env.
@@ -38,9 +30,6 @@ void aleph(){
 
 u_int mkenvid(struct Env *e)
 {
-	//printf("AlephDebug: ============mkenvid============\n");
-	//printf("AlephDebug: PARA:--------------------------\n");
-  //printf("AlephDebug: e = %08lx\n", e);
 	static u_long next_env_id = 0;
 
     /*Hint: lower bits of envid hold e's position in the envs array. */
@@ -96,27 +85,28 @@ int envid2env(u_int envid, struct Env **penv, int checkperm)
 
 /* Overview:
  *  Mark all environments in 'envs' as free and insert them into the env_free_list.
- *  Insert in reverse order,so that the first call to env_alloc() return envs[0].
- *
+ *  Insert in reverse order,so that the first call to env_all() return envs[0].
+ *  
  * Hints:
  *  You may use these defines to make it:
  *      LIST_INIT,LIST_INSERT_HEAD
  */
+
 void
 env_init(void)
 {
-	//printf("AlephDebug: ============env_init===========\n");
 	int i;
-  /*Step 1: Initial env_free_list. */
-	LIST_INIT( &env_free_list );
 
-  /*Step 2: Travel the elements in 'envs', init every element(mainly initial its status, mark it as free)
-   * and inserts them into the env_free_list as reverse order. */
-	for(i=NENV-1;i>=0;i--)
-	{
+    /*Step 1: Initial env_free_list. */
+	LIST_INIT(&env_free_list);
+
+    /*Step 2: Travel the elements in 'envs', initial every element(mainly initial its status, mark it as free)
+     * and inserts them into the env_free_list as reverse order. */
+	for (i = NENV - 1; i >= 0; i--) {
 		envs[i].env_status = ENV_FREE;
 		LIST_INSERT_HEAD(&env_free_list, &envs[i], env_link);
 	}
+
 }
 
 
@@ -126,49 +116,49 @@ env_init(void)
  *  and initialize the kernel portion of the new environment's address space.
  *  Do NOT map anything into the user portion of the environment's virtual address space.
  */
-/***Your Question Here***/
+
 static int
 env_setup_vm(struct Env *e)
 {
-	//printf("AlephDebug: ==========env_setup_vm=========\n");
-	//printf("AlephDebug: PARA:--------------------------\n");
-	//printf("AlephDebug: e = %08lx\n", e);
+
 	int i, r;
 	struct Page *p = NULL;
 	Pde *pgdir;
 
-  /*Step 1: Allocate a page for the page directory and add its reference.
-   *pgdir is the page directory of Env e. */
+    /*Step 1: Allocate a page for the page directory and add its reference.
+     *pgdir is the page directory of Env e. */
 	if ((r = page_alloc(&p)) < 0) {
 		panic("env_setup_vm - page_alloc error\n");
 		return r;
 	}
 	p->pp_ref++;
 	pgdir = (Pde *)page2kva(p);
-
-  /*Step 2: Zero pgdir's field before UTOP. */
+    
+    /*Step 2: Zero pgdir's field before UTOP. */
 	for (i = 0; i < PDX(UTOP); i++) {
 		pgdir[i] = 0;
 	}
 
-  /*Step 3: Copy kernel's boot_pgdir to pgdir. */
+    /*Step 3: Copy kernel's boot_pgdir to pgdir. */
 
-  /* Hint:
-   *  The VA space of all envs is identical above UTOP
-   *  (except at VPT and UVPT, which we've set below).
-   *  See ./include/mmu.h for layout.
-   *  Can you use boot_pgdir as a template?
-   */
+    /* Hint:
+     *  The VA space of all envs is identical above UTOP
+     *  (except at VPT and UVPT, which we've set below).
+     *  See ./include/mmu.h for layout.
+     *  Can you use boot_pgdir as a template?
+     */
 	for (i = PDX(UTOP); i <= PDX(~0); i++) {
 		pgdir[i] = boot_pgdir[i];
 	}
 	e->env_pgdir = pgdir;
 	e->env_cr3   = PADDR(pgdir);
 
-  /*Step 4: VPT and UVPT map the env's own page table, with
-   *different permissions. */
-  e->env_pgdir[PDX(VPT)]   = e->env_cr3;
-  e->env_pgdir[PDX(UVPT)]  = e->env_cr3 | PTE_V | PTE_R;
+    /***Your Question Here***/
+
+    /*Step 4: VPT and UVPT map the env's own page table, with
+     *different permissions. */
+    e->env_pgdir[PDX(VPT)]   = e->env_cr3;
+    e->env_pgdir[PDX(UVPT)]  = e->env_cr3 | PTE_V | PTE_R;
 	return 0;
 }
 
@@ -177,7 +167,7 @@ env_setup_vm(struct Env *e)
  *  On success, the new environment is stored in *new.
  *
  * Pre-Condition:
- *  If the new Env doesn't have parent, parent_id should be zero.
+ *  If this don't have parent, parent_id should be zero.
  *  env_init has been called before this function.
  *
  * Post-Condition:
@@ -195,40 +185,43 @@ env_setup_vm(struct Env *e)
 int
 env_alloc(struct Env **new, u_int parent_id)
 {
-	//printf("AlephDebug: ===========env_alloc===========\n");
-	//printf("AlephDebug: PARA:--------------------------\n");
-	//printf("AlephDebug: new = %08lx\n", new);
-	//printf("AlephDebug: parent_id = %08lx\n", parent_id);
 	int r;
 	struct Env *e;
-
-  /*Step 1: Get a new Env from env_free_list*/
-	if( (e = LIST_FIRST(&env_free_list)) == NULL )
+    
+    /*Step 1: Get a new Env from env_free_list*/
+	if (!(e = LIST_FIRST(&env_free_list))) {
 		return -E_NO_FREE_ENV;
-
-
-  /*Step 2: Call certain function(has been implemented) to init kernel memory layout for this new Env.
-   *The function mainly maps the kernel address to this new Env address. */
-	if ( (r = env_setup_vm(e)) < 0 )
- 		return r;
-
-  /*Step 3: Initialize every field of new Env with appropriate values*/
+	}
+    
+    /*Step 2: Call some function(has been implemented) to intial kernel memory layout for this new Env.
+     *this function mainly map the kernel address to this new Env address. */
+	if ((r = env_setup_vm(e)) < 0) {
+		return r;
+	}
+    /*Step 3: Initial every field of new Env to appropriate value*/
 	e->env_id = mkenvid(e);
 	e->env_parent_id = parent_id;
 	e->env_status = ENV_RUNNABLE;
 
-
-  /*Step 4: focus on initializing env_tf structure, located at this new Env.
-   * especially the sp register,CPU status. */
-  e->env_tf.cp0_status = 0x10001004;
+    /***Your Question Here***/
+    
+    /*Step 4: focus on initializing env_tf structure, located at this new Env. 
+     * especially the sp register,CPU status. */
 	e->env_tf.regs[29] = USTACKTOP;
+	e->env_tf.cp0_status = 0x10001004;
 
+    /* Lab4 should use:
+	e->env_ipc_blocked = 0;
+	e->env_ipc_value = 0;
+	e->env_ipc_from = 0;
+	e->env_ipc_recving = 0;
+	e->env_pgfault_handler = 0;
+	e->env_xstacktop = 0;
+    */
 
-  /*Step 5: Remove the new Env from Env free list*/
+    /*Step 5: Remove the new Env from Env free list*/
 	LIST_REMOVE(e, env_link);
-
 	*new = e;
-
 	return 0;
 }
 
@@ -250,60 +243,43 @@ env_alloc(struct Env **new, u_int parent_id)
 static int load_icode_mapper(u_long va, u_int32_t sgsize,
 							 u_char *bin, u_int32_t bin_size, void *user_data)
 {
-	//printf("AlephDebug: =======load_icode_mapper=======\n");
-	//printf("AlephDebug: PARA:--------------------------\n");
-  //printf("AlephDebug: va = %08lx\n", va);
-  //printf("AlephDebug: sgsize = %08lx\n", sgsize);
-  //printf("AlephDebug: bin = %08lx\n", bin);
-  //printf("AlephDebug: bin_size = %08lx\n", bin_size);
-	//printf("AlephDebug: user_data = %08lx\n", user_data);
-
 	struct Env *env = (struct Env *)user_data;
 	struct Page *p = NULL;
 	u_long i;
 	int r;
-	u_long offset = va - ROUNDDOWN(va, BY2PG);
-
-	//printf("AlephDebug: LOCO_ARG:----------------------\n");
-	//printf("AlephDebug: env = %08lx\n", env);
-	//printf("AlephDebug: p = %08lx\n", p);
-	//printf("AlephDebug: offset = %08lx\n", offset);
-
-	if(offset < 0)
-	{
-		//printf("AlephDebug: WARNING : OFFSET < 0 !!!!!!!\n");
-		return -1;
-	}
 
 	/*Step 1: load all content of bin into memory. */
 	for (i = 0; i < bin_size; i += BY2PG) {
-		/* Hint: You should alloc a page and increase the reference count of it. */
-		if( (r = page_alloc(&p)) < 0 )
+		// Hint: You should alloc a page and increase the reference count
+		//       of it.
+		if ((r = page_alloc(&p)) < 0) {
 			return r;
-		//p->pp_ref++; //我应该在这里增加引用数吗？
+		}
 
-		if( i == 0 )
-			bcopy(bin+i, (char *)page2kva(p) + offset, (BY2PG-offset)<(bin_size-i)?(BY2PG-offset):(bin_size-i) );
-		else
-			bcopy(bin+i-offset, (char *)page2kva(p), BY2PG<(bin_size-i)?BY2PG:(bin_size-i) );
+		p->pp_ref++;
 
-		page_insert(env->env_pgdir, p, va+i, PTE_V|PTE_R);
+		if (bin_size - i >= BY2PG) {
+			bcopy(bin + i, (void *)page2kva(p), BY2PG);
+		} else {
+			bcopy(bin + i, (void *)page2kva(p), bin_size - i);
+		}
+		// FIXME: some pages should be read-only.
+		page_insert(env->env_pgdir, p, va + i, PTE_V | PTE_R);
 	}
-	/*Step 2: alloc pages to reach `sgsize` when `bin_size` < `sgsize`.
-    * i has the value of `bin_size` now. */
+
+	/*Step 2: alloc pages to reach `sgsize` when `sgsize` < `bin_size`. */
 	while (i < sgsize) {
-		if( (r = page_alloc(&p)) < 0 )
+		if ((r = page_alloc(&p)) < 0) {
 			return r;
-		//p->pp_ref++; //我应该在这里增加引用数吗？
+		}
 
-		page_insert(env->env_pgdir, p, va+i, PTE_V|PTE_R);
+		p->pp_ref++;
 
-		i+=BY2PG;
+		// FIXME: some pages should be read-only.
+		page_insert(env->env_pgdir, p, va + i, PTE_V | PTE_R);
+
+		i += BY2PG;
 	}
-
-	//printf("AlephDebug: OTHER_LOG:----------------------\n");
-	//printf("AlephDebug: can BY2PG divide exactly sgsize? %d\n", sgsize%BY2PG==0);
-	//printf("AlephDebug: can BY2PG divide exactly bin_size? %d\n", bin_size%BY2PG==0);
 
 	return 0;
 }
@@ -314,7 +290,7 @@ static int load_icode_mapper(u_long va, u_int32_t sgsize,
  *  is given by the elf loader. And this function maps one page for the
  *  program's initial stack at virtual address USTACKTOP - BY2PG.
  *
- * Hints:
+ * Hints: 
  *  All mappings are read/write including those of the text segment.
  *  You may use these :
  *      page_alloc, page_insert, page2kva , e->env_pgdir and load_elf.
@@ -331,44 +307,36 @@ load_icode(struct Env *e, u_char *binary, u_int size)
 	struct Page *p = NULL;
 	u_long entry_point;
 	u_long r;
-  u_long perm;
+    u_long perm;
+    
+    /*Step 1: alloc a page. */
+	if ((r = page_alloc(&p)) < 0) {
+		panic ("page alloc error!");
+	}
+	p->pp_ref++;
+    //FIXEME:cgh:create initial stack for the user process e
 
-	//printf("AlephDebug: ===========load_icode==========\n");
-	//printf("AlephDebug: PARA:--------------------------\n");
-  //printf("AlephDebug: e = %08lx\n", e);
-  //printf("AlephDebug: binary = %08lx\n", binary);
-  //printf("AlephDebug: size = %08lx\n", size);
+    /*Step 2: Use appropriate perm to set initial stack for new Env. */
+    /*Hint: The user-stack should be writable? */
+	perm = PTE_R | PTE_V;
+	page_insert(e->env_pgdir, p, USTACKTOP - BY2PG, perm);
 
-  /*Step 1: alloc a page. */
-	if( (r = page_alloc(&p)) < 0 )
-		return r;
-	//p->pp_ref++;
-  /*Step 2: Use appropriate perm to set initial stack for new Env. */
-  /*Hint: The user-stack should be writable? */
-	perm = PTE_V|PTE_R;
-	page_insert(e->env_pgdir, p, USTACKTOP-BY2PG, perm );
-
-  /*Step 3:load the binary by using elf loader. */
+    /*Step 3:load the binary by using elf loader. */
 	load_elf(binary, size, &entry_point, e, load_icode_mapper);
 
-  /***Your Question Here***/
-  /*Step 4:Set CPU's PC register as appropriate value. */
-	e->env_tf.pc = entry_point;
+    /***Your Question Here***/
 
-	//printf("AlephDebug: LOCO_ARG:----------------------\n");
-	//printf("AlephDebug: p = %08lx\n", p);
-	//printf("AlephDebug: entry_point = %08lx\n", entry_point);
-	//printf("AlephDebug: perm = %08lx\n", perm);
-	//printf("AlephDebug: OTHER_LOG:----------------------\n");
-	//printf("AlephDebug: can BY2PG divide exactly size? %d\n", size%BY2PG==0);
+    /*Step 4:Set CPU's PC register as appropriate value. */
+	//^e->env_tf.pc=UTEXT+(index[6] & 0x000FFFFF);
+	e->env_tf.pc = entry_point;
 }
 
 /* Overview:
- *  Allocates a new env with env_alloc, loads te named elf binary into
+ *  Allocates a new env with env_alloc, loads te named elf binary into 
  *  it with load_icode. This function is ONLY called during kernel
  *  initialization, before running the first user_mode environment.
  *
- * Hints:
+ * Hints: 
  *  this function wrap the env_alloc and load_icode function.
  */
 void
@@ -376,15 +344,7 @@ env_create(u_char *binary, int size)
 {
 	struct Env *e;
 
-	//printf("AlephDebug: ===========env_create==========\n");
-	//printf("AlephDebug: PARA:--------------------------\n");
-  //printf("AlephDebug: binary = %08lx\n", binary);
-  //printf("AlephDebug: size = %08lx\n", size);
-
-  /*Step 1: Use env_alloc to alloc a new env. */
 	env_alloc(&e, 0);
-
-  /*Step 2: Use load_icode() to load the named elf binary. */
 	load_icode(e, binary, size);
 }
 
@@ -394,9 +354,6 @@ env_create(u_char *binary, int size)
 void
 env_free(struct Env *e)
 {
-	//printf("AlephDebug: ===========env_free============\n");
-	//printf("AlephDebug: PARA:--------------------------\n");
-	//printf("AlephDebug: e = %08lx\n", e);
 	Pte *pt;
 	u_int pdeno, pteno, pa;
 
@@ -432,23 +389,19 @@ env_free(struct Env *e)
 }
 
 /* Overview:
- *  Frees env e, and schedules to run a new env
+ *  Frees env e, and schedules to run a new env 
  *  if e is the current env.
  */
 void
 env_destroy(struct Env *e)
 {
-	//printf("AlephDebug: ==========env_destroy==========\n");
-	//printf("AlephDebug: PARA:--------------------------\n");
-  //printf("AlephDebug: e = %08lx\n", e);
-
-  /* Hint: free e. */
+    /* Hint: free e. */
 	env_free(e);
 
-  /* Hint: schedule to run a new environment. */
+    /* Hint: schedule to run a new environment. */
 	if (curenv == e) {
 		curenv = NULL;
-    /* Hint:Why this? */
+        /* Hint:Why this? */
 		bcopy((void *)KERNEL_SP - sizeof(struct Trapframe),
 			  (void *)TIMESTACK - sizeof(struct Trapframe),
 			  sizeof(struct Trapframe));
@@ -474,34 +427,30 @@ extern void lcontext(u_int contxt);
 void
 env_run(struct Env *e)
 {
-	//printf("AlephDebug: ============env_run============\n");
-	//printf("AlephDebug: PARA:--------------------------\n");
-	//printf("AlephDebug: e = %08lx\n", e);
 	/*Step 1: save register state of curenv. */
-  /* Hint: if there is a environment running,you should do
-  *  context switch.You can imitate env_destroy() 's behaviors.*/
-	if(curenv)
-	{
-		bcopy((void *)TIMESTACK - sizeof(struct Trapframe), (void *)(&(curenv->env_tf)), sizeof(struct Trapframe));
-		curenv->env_tf.pc = ((struct Trapframe *)(TIMESTACK - sizeof(struct Trapframe)))->cp0_epc;
+    
+    /* Hint: if there is a environment running,you should do
+    *  context switch.You can imitate env_destroy() 's behaviors.*/
+
+	struct Trapframe  *old;
+	old = (struct Trapframe *)(TIMESTACK - sizeof(struct Trapframe));
+
+	if (curenv) {
+		bcopy(old, &curenv->env_tf, sizeof(struct Trapframe));
+		curenv->env_tf.pc = old->cp0_epc;
 	}
-	//printf("AlephDebug: ---------STEP 1 OVER-----------\n");
-  /*Step 2: Set 'curenv' to the new environment. */
+    /*Step 2: Set 'curenv' to the new environment. */
 	curenv = e;
-	//printf("AlephDebug: ---------STEP 2 OVER-----------\n");
-  /*Step 3: Use lcontext() to switch to its address space. */
-	lcontext(KADDR(curenv->env_cr3));
-	//printf("AlephDebug: ---------STEP 3 OVER-----------\n");
-  /*Step 4: Use env_pop_tf() to restore the environment's
-   * environment   registers and drop into user mode in the
-   * the   environment.
-   */
-  /* Hint: You should use GET_ENV_ASID there.Think why? */
-	//printf("AlephDebug: ---------STEP 4 START----------\n");
-	//printf("AlephDebug: &(curenv->env_tf) = %08lx\n", &(curenv->env_tf));
-	//printf("AlephDebug: (curenv->env_tf).pc = %08lx\n", (curenv->env_tf).pc);
-	//printf("AlephDebug: curenv->env_id = %08lx\n", curenv->env_id);
-	//printf("AlephDebug: GET_ENV_ASID(curenv->env_id) = %08lx\n", GET_ENV_ASID(curenv->env_id));
+
+    /*Step 3: Use lcontext() to switch to its address space. */
+    lcontext(KADDR(curenv->env_cr3));
+
+    /*Step 4: Use env_pop_tf() to restore the environment's
+     * environment   registers and drop into user mode in the
+     * the   environment.
+     */
+    
+    /* Hint: You should use GET_ENV_ASID there.Think why? */
 	env_pop_tf(&(curenv->env_tf), GET_ENV_ASID(curenv->env_id));
-	//printf("AlephDebug: ---------STEP 4 OVER-----------\n");
 }
+

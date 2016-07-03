@@ -136,9 +136,9 @@ piperead(struct Fd *fd, void *vbuf, u_int n, u_int offset)
     /*Step 1: Get the pipe p according to fd. And vbuf is the reading buffer. */
 
     /*Step 2: If pointer of reading is ahead of writing,then yield. */
-    
+	
     /*Step 3: p_buf's size is BY2PIPE, and you should use it to fill rbuf. */
-	return i;
+	
 }
 
 /* Overview:
@@ -164,7 +164,7 @@ pipewrite(struct Fd *fd, const void *vbuf, u_int n, u_int offset)
     /*Step 2: If the difference between the pointer of writing and reading is larger than BY2PIPE, then yield. */
 
     /*Step 3: p_buf's size is BY2PIPE, and you should use it to fill rbuf. */
-	return n;
+	
 }
 
 static int
@@ -183,7 +183,6 @@ pipestat(struct Fd *fd, struct Stat *stat)
 static int
 pipeclose(struct Fd *fd)
 {
-	syscall_mem_unmap(0, fd2data(fd));
 	return 0;
 }
 

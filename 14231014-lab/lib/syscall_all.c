@@ -10,7 +10,7 @@ extern struct Env *curenv;
 
 /* Overview:
  * 	This function is used to print a character on screen.
- *
+ * 
  * Pre-Condition:
  * 	`c` is the character you want to print.
  */
@@ -24,8 +24,8 @@ void sys_putchar(int sysno, int c, int a2, int a3, int a4, int a5)
  * 	This function enables you to copy content of `srcaddr` to `destaddr`.
  *
  * Pre-Condition:
- * 	`destaddr` and `srcaddr` can't be NULL. Also, the `srcaddr` area
- * 	shouldn't overlap the `destaddr`, otherwise the behavior of this
+ * 	`destaddr` and `srcaddr` can't be NULL. Also, the `srcaddr` area 
+ * 	shouldn't overlap the `destaddr`, otherwise the behavior of this 
  * 	function is undefined.
  *
  * Post-Condition:
@@ -63,7 +63,9 @@ u_int sys_getenvid(void)
  */
 void sys_yield(void)
 {
-	bcopy((void *)KERNEL_SP - sizeof(struct Trapframe), (void *)TIMESTACK - sizeof(struct Trapframe), sizeof(struct Trapframe));
+	bcopy((void *)KERNEL_SP - sizeof(struct Trapframe),
+		  (void *)TIMESTACK - sizeof(struct Trapframe),
+		  sizeof(struct Trapframe));
 	sched_yield();
 }
 
@@ -71,8 +73,8 @@ void sys_yield(void)
  * 	This function is used to destroy the current environment.
  *
  * Pre-Condition:
- * 	The parameter `envid` must be the environment id of a
- * process, which is either a child of the caller of this function
+ * 	The parameter `envid` must be the environment id of a 
+ * process, which is either a child of the caller of this function 
  * or the caller itself.
  *
  * Post-Condition:
@@ -98,7 +100,7 @@ int sys_env_destroy(int sysno, u_int envid)
 
 /* Overview:
  * 	Set envid's pagefault handler entry point and exception stack.
- *
+ * 
  * Pre-Condition:
  * 	xstacktop points one byte past exception stack.
  *
@@ -118,9 +120,12 @@ int sys_set_pgfault_handler(int sysno, u_int envid, u_int func, u_int xstacktop)
 		return ret;
 	}
 
+	//	printf("sys_set_pgfault_handler():envid:%x\tfunc:%x",env->env_id,func);
 	env->env_pgfault_handler = func;
+	xstacktop = TRUP(xstacktop);
 	env->env_xstacktop = xstacktop;
 	return 0;
+	//	panic("sys_set_pgfault_handler not implemented");
 }
 
 /* Overview:
@@ -129,7 +134,7 @@ int sys_set_pgfault_handler(int sysno, u_int envid, u_int func, u_int xstacktop)
  *
  * 	If a page is already mapped at 'va', that page is unmapped as a
  * side-effect.
- *
+ * 
  * Pre-Condition:
  * perm -- PTE_V is required,
  *         PTE_COW is not allowed(return -E_INVAL),
@@ -148,25 +153,40 @@ int sys_mem_alloc(int sysno, u_int envid, u_int va, u_int perm)
 	int ret;
 	ret = 0;
 
-	if ( va < 0 || va >= UTOP || !(perm & PTE_V) || (perm & PTE_COW)) {
+	//printf("sys_mem_alloc(): envid:%x  va%x  perm:%x\n",envid,va,perm);
+	if ((perm & PTE_V) == 0) {
 		return -E_INVAL;
 	}
 
+	//if((perm & PTE_R)==0)
+	//	return -E_INVAL;
+	if ((perm & PTE_COW) != 0) {
+		return -E_INVAL;
+	}
+
+	if (va >= UTOP) {
+		return -E_INVAL;
+	}
+
+	//printf("sys_mem_alloc(): envid2env begin!\n");
 	if ((ret = envid2env(envid, &env, 0)) < 0) {
 		return ret;
 	}
 
+	//printf("sys_mem_alloc(): page_alloc begin!\n");
 	if ((ret = page_alloc(&ppage)) < 0) {
 		return ret;
 	}
 
 	bzero((void *)page2kva(ppage), BY2PG);
 
+	//printf("sys_mem_alloc(): page_insert begin!\n");
 	if ((ret = page_insert(env->env_pgdir, ppage, va, perm)) < 0) {
 		return ret;
 	}
 
 	return ret;
+	//	panic("sys_mem_alloc not implemented");
 }
 
 /* Overview:
@@ -182,8 +202,10 @@ int sys_mem_alloc(int sysno, u_int envid, u_int va, u_int perm)
  * Note:
  * 	Cannot access pages above UTOP.
  */
-int sys_mem_map(int sysno, u_int srcid, u_int srcva, u_int dstid, u_int dstva, u_int perm)
+int sys_mem_map(int sysno, u_int srcid, u_int srcva, u_int dstid, u_int dstva,
+				u_int perm)
 {
+	// Your code here.
 	int ret;
 	u_int round_srcva, round_dstva;
 	struct Env *srcenv;
@@ -196,30 +218,38 @@ int sys_mem_map(int sysno, u_int srcid, u_int srcva, u_int dstid, u_int dstva, u
 	round_srcva = ROUNDDOWN(srcva, BY2PG);
 	round_dstva = ROUNDDOWN(dstva, BY2PG);
 
-  //your code here
-	if ( srcva < 0 || srcva > UTOP || dstva < 0 || dstva > UTOP || !(perm & PTE_V)) {
+	//printf("sys_mem_map comes 1\n");
+	if (srcva > UTOP || dstva > UTOP) {
 		return -E_INVAL;
 	}
 
+	//printf("sys_mem_map comes 2\n");
+	if ((perm & PTE_V) == 0) {
+		return -E_INVAL;
+	}
+
+	//printf("sys_mem_map comes 3\n");
 	if ((ret = envid2env(srcid, &srcenv, 0)) < 0) {
 		return ret;
 	}
 
+	//printf("sys_mem_map comes 4\n");
 	if ((ret = envid2env(dstid, &dstenv, 0)) < 0) {
 		return ret;
 	}
 
+	//printf("sys_mem_map comes 5 pgdir %x, va %x\n", srcenv->env_pgdir,round_srcva);
 	ppage = page_lookup(srcenv->env_pgdir, round_srcva, &ppte);
 
 	if (ppage == 0) {
 		return -E_INVAL;
 	}
 
-	if ((ret = page_insert(dstenv->env_pgdir, ppage, round_dstva, perm)) < 0) {
-		return ret;
-	}
-
+	//printf("sys_mem_map comes 6\n");
+	ret = page_insert(dstenv->env_pgdir, ppage, round_dstva, perm);
+	//printf("sys_mem_map comes 7\n");
 	return ret;
+	//	panic("sys_mem_map not implemented");
 }
 
 /* Overview:
@@ -244,7 +274,6 @@ int sys_mem_unmap(int sysno, u_int envid, u_int va)
 	}
 
 	page_remove(env->env_pgdir, va);
-
 	return ret;
 	//	panic("sys_mem_unmap not implemented");
 }
@@ -267,21 +296,19 @@ int sys_env_alloc(void)
 	int r;
 	struct Env *e;
 
-	/*创建一个新的进程*/
+
 	if ((r = env_alloc(&e, curenv->env_id)) < 0) {
 		return r;
 	}
 
-	/*将父进程的上下文复制给子进程，并且修改返回pc，参考env.c*/
-	bcopy(KERNEL_SP - sizeof(struct Trapframe), &e->env_tf, sizeof(struct Trapframe));
+	bcopy(KERNEL_SP - sizeof(struct Trapframe), &e->env_tf,
+		  sizeof(struct Trapframe));
+	printf("sys_env_alloc():the child pc :%x", e->env_tf.cp0_epc);
 	e->env_tf.pc = e->env_tf.cp0_epc;
-
-	/*修改返回值寄存器v0*/
-	e->env_tf.regs[2] = 0;
-
-	/*把运行状态设置为ENV_NOT_RUNNABLE*/
+	//e->env_tf.cp0_status = 0x1000000C;
 	e->env_status = ENV_NOT_RUNNABLE;
-
+	e->env_tf.regs[2] = 0;	//important
+	e->env_pgfault_handler = 0;//curenv->env_pgfault_handler;
 	return e->env_id;
 	//	panic("sys_env_alloc not implemented");
 }
@@ -292,7 +319,7 @@ int sys_env_alloc(void)
  * Pre-Condition:
  * 	status should be one of `ENV_RUNNABLE`, `ENV_NOT_RUNNABLE` and
  * `ENV_FREE`. Otherwise return -E_INVAL.
- *
+ * 
  * Post-Condition:
  * 	Returns 0 on success, < 0 on error.
  * 	Return -E_INVAL if status is not a valid status for an environment.
@@ -304,7 +331,8 @@ int sys_set_env_status(int sysno, u_int envid, u_int status)
 	struct Env *env;
 	int ret;
 
-	if ((status != ENV_RUNNABLE) && (status != ENV_NOT_RUNNABLE) && (status != ENV_FREE)) {
+	if ((status != ENV_RUNNABLE) && (status != ENV_NOT_RUNNABLE) &&
+		(status != ENV_FREE)) {
 		return -E_INVAL;
 	}
 
@@ -313,7 +341,6 @@ int sys_set_env_status(int sysno, u_int envid, u_int status)
 	}
 
 	env->env_status = status;
-
 	return 0;
 	//	panic("sys_env_set_status not implemented");
 }
@@ -332,19 +359,12 @@ int sys_set_env_status(int sysno, u_int envid, u_int status)
  */
 int sys_set_trapframe(int sysno, u_int envid, struct Trapframe *tf)
 {
-	struct Env *env;
-	int ret;
 
-	if ((ret = envid2env(envid, &env, 0)) < 0) {
-		return ret;
-	}
-
-	env->env_tf = *tf;
 	return 0;
 }
 
 /* Overview:
- * 	Kernel panic with message `msg`.
+ * 	Kernel panic with message `msg`. 
  *
  * Pre-Condition:
  * 	msg can't be NULL
@@ -359,28 +379,44 @@ void sys_panic(int sysno, char *msg)
 }
 
 /* Overview:
- * 	This function enables caller to receive message from
- * other process. To be more specific, it will flag
- * the current process so that other process could send
+ * 	This function enables caller to receive message from 
+ * other process. To be more specific, it will flag 
+ * the current process so that other process could send 
  * message to it.
  *
  * Pre-Condition:
  * 	`dstva` is valid (Note: NULL is also a valid value for `dstva`).
- *
+ * 
  * Post-Condition:
- * 	This syscall will set the current process's status to
- * ENV_NOT_RUNNABLE, giving up cpu.
+ * 	This syscall will set the current process's status to 
+ * ENV_NOT_RUNNABLE, giving up cpu. 
  */
 void sys_ipc_recv(int sysno, u_int dstva)
 {
-	/*正准备接受其他进程的消息*/
+	/*
+		// Your code here
+		curenv->env_status = ENV_NOT_RUNNABLE;
+		curenv->env_ipc_recving = 1;
+		sched_yield();
+	//	panic("sys_ipc_recv not implemented");
+	*/
+	if (curenv->env_ipc_recving) {
+		panic("already recving!");
+	}
+
+	if (dstva >= UTOP) {
+		panic("invalid dstva:%x", dstva);
+	}
+
+	//printf("Kernel:sys_ipc_recv come 0\n");
+	//panic("_________________");
 	curenv->env_ipc_recving = 1;
-	/*阻塞当前进程*/
-	curenv->env_status = ENV_NOT_RUNNABLE;
-	/*记录接受数据的虚拟地址*/
 	curenv->env_ipc_dstva = dstva;
-	/*切换进程*/
-	sys_yield();
+	curenv->env_status = ENV_NOT_RUNNABLE;
+	//printf("Kernel:sys_ipc_recv come 1\n");
+	bcopy((void *)KERNEL_SP - sizeof(struct Trapframe),
+		  (void *)TIMESTACK - sizeof(struct Trapframe), sizeof(struct Trapframe));
+	sched_yield();
 }
 
 /* Overview:
@@ -400,43 +436,77 @@ void sys_ipc_recv(int sysno, u_int dstva)
  *
  * Hint: the only function you need to call is envid2env.
  */
-int sys_ipc_can_send(int sysno, u_int envid, u_int value, u_int srcva, u_int perm)
+int sys_ipc_can_send(int sysno, u_int envid, u_int value, u_int srcva,
+					 u_int perm)
 {
+	/*
+		// Your code here
+		struct Env *env;
+		int ret;
+		ret = envid2env(envid, &env, 0);
+		if(ret==0)
+		{
+			if(env->env_ipc_recving == 0) return -E_IPC_NOT_RECV;
+			env->env_status =ENV_RUNNABLE;
+			env->env_ipc_recving = 0;
+			env->env_ipc_from = curenv->env_id;
+			env->env_ipc_value = value;
+			return ret;
+		}else
+		{
+			printf("No such env\n");
+			return ret;
+		}*/
+	//panic("sys_ipc_can_send not implemented");
+
 	int r;
 	struct Env *e;
 	struct Page *p;
 
-	/*获取进程控制块*/
-	if ( (r = envid2env(envid, &e, 0)) < 0) {
+	if ((r = envid2env(envid, &e, 0)) < 0) {
 		return r;
 	}
 
-	/*看看接收的进程是否准备完毕*/
-	if( !(e->env_ipc_recving) )	{
+	if (!(e)->env_ipc_recving) {
+		//writef("there is no env to recevie!!");
 		return -E_IPC_NOT_RECV;
 	}
 
+	if (srcva != 0 && e->env_ipc_dstva != 0) {
 
-	/*找一找发出去的数据在哪个页面*/
-	if ( (p = page_lookup(curenv->env_pgdir, srcva, 0)) <= 0 ) {
+		if (srcva >= UTOP) {
+			return -E_INVAL;
+		}
 
-	}
-	else {
-		/*把接收数据的地方做个映射*/
-		if( (r = page_insert(e->env_pgdir, p, e->env_ipc_dstva, perm)) < 0 ){
+		//we have no fault //if (((~perm)&(PTE_U|PTE_P)) || (perm&~(PTE_U|PTE_P|PTE_AVAIL|PTE_W))) return -E_INVAL;
+		//		printf("sys_ipc_can_send:come 1\n");
+		//		printf("srcva = %x,	dstva = %x\n",srcva,e->env_ipc_dstva);
+
+		p = page_lookup(curenv->env_pgdir, srcva, 0);
+
+		if (p == 0) {
+			printf("[%08x] page_lookup %08x failed in sys_ipc_can_send\n",
+				   curenv->env_id, srcva);
+			return -E_INVAL;
+		}
+
+		//		printf("sys_ipc_can_sen:come 2\n");
+		r = page_insert(e->env_pgdir, p, e->env_ipc_dstva, perm);
+
+		if (r < 0) {
 			return r;
 		}
-	}
-	/*设置权限位*/
-	e->env_ipc_perm = perm;
-	/*将接收就绪设回0*/
-	e->env_ipc_recving = 0;
-	/*是从当前这个进程收到的信息*/
-	e->env_ipc_from = curenv->env_id;
-	/*这个value是干啥的？*/
-	e->env_ipc_value = value;
-	/*重新设为可运行*/
-	e->env_status = ENV_RUNNABLE;
 
+		e->env_ipc_perm = perm;
+	} else {
+		e->env_ipc_perm = 0;
+	}
+
+	e->env_ipc_recving = 0;
+	e->env_ipc_from = curenv->env_id;
+	e->env_ipc_value = value;
+	e->env_status = ENV_RUNNABLE;
+	//	printf("sys_ipc_can_send:out\n");
 	return 0;
 }
+

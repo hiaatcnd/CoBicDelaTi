@@ -11,8 +11,8 @@
  * 	Copy `len` bytes from `src` to `dst`.
  *
  * Pre-Condition:
- * 	`src` and `dst` can't be NULL. Also, the `src` area
- * 	 shouldn't overlap the `dest`, otherwise the behavior of this
+ * 	`src` and `dst` can't be NULL. Also, the `src` area 
+ * 	 shouldn't overlap the `dest`, otherwise the behavior of this 
  * 	 function is undefined.
  */
 void user_bcopy(const void *src, void *dst, size_t len)
@@ -42,14 +42,14 @@ void user_bcopy(const void *src, void *dst, size_t len)
 }
 
 /* Overview:
- * 	Sets the first n bytes of the block of memory
+ * 	Sets the first n bytes of the block of memory 
  * pointed by `v` to zero.
- *
+ * 
  * Pre-Condition:
  * 	`v` must be valid.
  *
  * Post-Condition:
- * 	the content of the space(from `v` to `v`+ n)
+ * 	the content of the space(from `v` to `v`+ n) 
  * will be set to zero.
  */
 void user_bzero(void *v, u_int n)
@@ -69,52 +69,50 @@ void user_bzero(void *v, u_int n)
 /* Overview:
  * 	Custom page fault handler - if faulting page is copy-on-write,
  * map in our own private writable copy.
- *
+ * 
  * Pre-Condition:
  * 	`va` is the address which leads to a TLBS exception.
  *
  * Post-Condition:
  *  Launch a user_panic if `va` is not a copy-on-write page.
- * Otherwise, this handler should map a private writable copy of
+ * Otherwise, this handler should map a private writable copy of 
  * the faulting page at correct address.
  */
 static void
 pgfault(u_int va)
 {
-	u_int temp = 0x50000000;
-	u_int perm = (*vpt)[VPN(va)] & 0xfff;
-	int r;
+	u_int *tmp;
 	//	writef("fork.c:pgfault():\t va:%x\n",va);
-	if (perm & PTE_COW) {
-		//map the new page at a temporary place
-		if ((r =	syscall_mem_alloc(0, temp, perm & (~PTE_COW))) < 0) { /*这里保留一下其他权限*/
-			user_panic("syscall_mem_alloc error : %d\n", r );
-		}
-		//copy the content
-		user_bcopy((void *)ROUNDDOWN(va, BY2PG), (void *)temp, BY2PG);
-	  //map the page on the appropriate place
-	  if ((r = syscall_mem_map(0, temp, 0, va, perm & (~PTE_COW))) < 0) { /*这里保留一下其他权限*/
-			user_panic("syscall_mem_map error : %d\n", r );
-		}
-	  //unmap the temporary place
-	  if ((r = syscall_mem_unmap(0, temp)) < 0) {
-			user_panic("syscall_mem_unmap error : %d\n", r );
-		}
+
+	if (((*vpt)[VPN(va)] & PTE_COW) == 0) {
+		user_panic("It is not a copy-on-write page at va:%d\n", va);
 	}
-	return ;
+
+	syscall_mem_alloc(0, BY2PG,
+					  PTE_V | PTE_R);	//map the new page at a temporary place
+
+	//copy the content
+	tmp = (u_int *)ROUNDDOWN(va, BY2PG);
+	user_bcopy((void *)tmp, (void *)BY2PG, BY2PG);
+	//map the page on the appropriate place
+	syscall_mem_map(0, BY2PG, 0, va, PTE_V | PTE_R);
+	//unmap the temporary place
+	syscall_mem_unmap(0, BY2PG);
+	// Your code here.
+	//	writef("fork.c:pgfault(): It's END!\n");
 }
 
 /* Overview:
  * 	Map our virtual page `pn` (address pn*BY2PG) into the target `envid`
- * at the same virtual address.
+ * at the same virtual address. 
  *
  * Post-Condition:
- *  if the page is writable or copy-on-write, the new mapping must be
- * created copy on write and then our mapping must be marked
+ *  if the page is writable or copy-on-write, the new mapping must be 
+ * created copy on write and then our mapping must be marked 
  * copy on write as well. In another word, both of the new mapping and
- * our mapping should be copy-on-write if the page is writable or
+ * our mapping should be copy-on-write if the page is writable or 
  * copy-on-write.
- *
+ * 
  * Hint:
  * 	PTE_LIBRARY indicates that the page is shared between processes.
  * A page with PTE_LIBRARY may have PTE_R at the same time. You
@@ -124,9 +122,9 @@ static void
 duppage(u_int envid, u_int pn)
 {
 	/* Note:
-	 *  I am afraid I have some bad news for you. There is a ridiculous,
-	 * annoying and awful bug here. I could find another more adjectives
-	 * to qualify it, but you have to reproduce it to understand
+	 *  I am afraid I have some bad news for you. There is a ridiculous, 
+	 * annoying and awful bug here. I could find another more adjectives 
+	 * to qualify it, but you have to reproduce it to understand 
 	 * how disturbing it is.
 	 * 	To reproduce this bug, you should follow the steps bellow:
 	 * 	1. uncomment the statement "writef("");" bellow.
@@ -134,9 +132,9 @@ duppage(u_int envid, u_int pn)
 	 * 	3. lauch Gxemul and check the result.
 	 * 	4. you can add serveral `writef("");` and repeat step2~3.
 	 * 	Then, you will find that additional `writef("");` may lead to
-	 * a kernel panic. Interestingly, some students, who faced a strange
+	 * a kernel panic. Interestingly, some students, who faced a strange 
 	 * kernel panic problem, found that adding a `writef("");` could solve
-	 * the problem.
+	 * the problem. 
 	 *  Unfortunately, we cannot find the code which leads to this bug,
 	 * although we have debugged it for serveral weeks. If you face this
 	 * bug, we would like to say "Good luck. God bless."
@@ -144,23 +142,22 @@ duppage(u_int envid, u_int pn)
 	// writef("");
 	u_int addr;
 	u_int perm;
-	int r;
 
-	perm = vpt[0][pn] & 0xfff;
+	perm = (*vpt)[pn] & 0xfff;
 	addr = pn * BY2PG;
 
-	if ((perm & PTE_V) && ((perm & PTE_R) != 0 || (perm & PTE_COW) != 0)) {
-		if ((r = syscall_mem_map(0, addr, envid, addr, perm | PTE_COW)) < 0) {
-			user_panic("syscall_mem_map son error : %d\n", r );
+	if ((perm & PTE_R) != 0 || (perm & PTE_COW) != 0) {
+		if (perm & PTE_LIBRARY) {
+			perm = PTE_V | PTE_R | PTE_LIBRARY;
+		} else {
+			perm = PTE_V | PTE_COW;
 		}
-		if ((r = syscall_mem_map(0, addr, 0, addr, perm | PTE_COW)) < 0) { /*envid2env的时候，如果envid是0，则代表当前进程*/
-			user_panic("syscall_mem_map father error : %d\n", r );
-		}
-	}
-	else {
-		if ((r = syscall_mem_map(0, addr, envid, addr, perm)) < 0) {
-			user_panic("syscall_mem_map son error : %d\n", r );
-		}
+
+		syscall_mem_map(0, addr, envid, addr, perm);
+		syscall_mem_map(0, addr, 0, addr, perm);
+	} else {
+		//user_panic("_______page is not write & COW______");
+		syscall_mem_map(0, addr, envid, addr, perm);
 	}
 
 	return;
@@ -173,8 +170,8 @@ duppage(u_int envid, u_int pn)
  *
  * Hint: use vpd, vpt, and duppage.
  * Hint: remember to fix "env" in the child process!
- * Note: `set_pgfault_handler`(user/pgfault.c) is different from
- *       `syscall_set_pgfault_handler`.
+ * Note: `set_pgfault_handler`(user/pgfault.c) is different from 
+ *       `syscall_set_pgfault_handler`. 
  */
 extern void __asm_pgfault_handler(void);
 int
@@ -185,32 +182,51 @@ fork(void)
 	extern struct Env *envs;
 	extern struct Env *env;
 	u_int i;
-	int r;
+
+	//	writef("fork.c:\tfork is begin!\n");
 
 	//The parent installs pgfault using set_pgfault_handler
 	set_pgfault_handler(pgfault);
+
 	//alloc a new alloc
-	newenvid = syscall_env_alloc();
-	if( newenvid == 0 ) {
+	if ((newenvid = syscall_env_alloc()) < 0) {
+		writef("fork:no env can be alloced\n");
+		return newenvid;
+	}
+
+	//writef("newenvid = %x\n",newenvid);
+	if (newenvid == 0) {
+		//		writef("@@@@@@@ I'm child @@@@@@@\n");
 		env = &envs[ENVX(syscall_getenvid())];
+		return 0;
 	}
-	else if( newenvid > 0 ) {
-		for (i = 0; i < UTOP - BY2PG; i+=BY2PG) {
-			if (((*vpd)[i / PDMAP]) != 0 && ((*vpt)[i / BY2PG]) != 0) {	//这里有个问题「.word」到底是什么功能？
-				duppage(newenvid, i / BY2PG);
-			}
-		}
-		if (syscall_mem_alloc(newenvid, UXSTACKTOP - BY2PG, PTE_V | PTE_R) < 0) {
-			return -E_NO_MEM;
-		}
-		if ((r = syscall_set_pgfault_handler(newenvid, __asm_pgfault_handler, UXSTACKTOP)) < 0) {
-			//return r;
-		}
-		if ((r = syscall_set_env_status(newenvid, ENV_RUNNABLE)) < 0) {
-			//return r;
+
+	//	writef("fork.c:\tvpd:%x\tvpt:%x\n",(int)vpd,(int)vpt);
+	for (i = 0; i < (UTOP / BY2PG) - 1; i++) {
+
+		if (((*vpd)[i / PTE2PT]) != 0 && ((*vpt)[i]) != 0) {
+			//			writef("i:%x\tvpd[i/PTE2PT]:%x\tvpt[i]:%x\n",i,(*vpd)[i/PTE2PT],(*vpt)[i]);
+			duppage(newenvid, i);
 		}
 	}
+
+	//writef("newenvdi:%x\n",newenvid);
+	if (syscall_mem_alloc(newenvid, UXSTACKTOP - BY2PG, PTE_V | PTE_R) < 0) {
+		writef("syscall_mem_alloc for UXSTACK is wrong\n");
+	}
+
+	//writef("end of alloc UXSTACKTOP\n");
+	//	writef("________________handler %x\n",  __asm_pgfault_handler);
+	syscall_set_pgfault_handler(newenvid, __asm_pgfault_handler, UXSTACKTOP);
+	//writef("end of set pgfault handler\n");
+	syscall_set_env_status(newenvid, ENV_RUNNABLE);
+	//syscall_set_env_status(0x800, ENV_NOT_RUNNABLE);
+	//writef("end of set child env runnable\n");
+	//	tlbflush();
+	//user_panic("_________________________");
+
 	return newenvid;
+	//	user_panic("fork not implemented");
 }
 
 // Challenge!

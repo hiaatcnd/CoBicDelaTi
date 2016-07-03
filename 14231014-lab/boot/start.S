@@ -61,7 +61,7 @@ KERNEL_STACK:
 
 			.text
 LEAF(_start)
-
+	
 	.set	mips2
 	.set	reorder
 
@@ -83,11 +83,12 @@ LEAF(_start)
 
 	li		t0,0x80400000
 	sw		t0,mCONTEXT
-
+	
 	/* jump to main */
 	jal	main
-
+			
 loop:
 	j	loop
 	nop
 END(_start)
+

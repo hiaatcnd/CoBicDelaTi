@@ -262,7 +262,7 @@ ftruncate(int fdnum, u_int size)
 int
 remove(const char *path)
 {
-	return fsipc_remove(path);
+	// Your code here.
 }
 
 // Overview:
@@ -272,3 +272,4 @@ sync(void)
 {
 	return fsipc_sync();
 }
+

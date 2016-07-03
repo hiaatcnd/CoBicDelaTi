@@ -17,14 +17,16 @@ USERLIB := printf.o \
 		fd.o \
 		pageref.o \
 		file.o \
-		pipe.o \
 		fsipc.o \
+		wait.o \
+		spawn.o \
+		pipe.o \
 		console.o \
 		fprintf.o
 
 CFLAGS += -nostdlib -static
 
-all: fktest.x fktest.b pingpong.x pingpong.b idle.x $(USERLIB) entry.o syscall_wrap.o
+all: fktest.x fktest.b testfdsharing.x testfdsharing.b pingpong.x pingpong.b idle.x testspawn.x testarg.b testpipe.x testpiperace.x icode.x init.b sh.b cat.b ls.b $(USERLIB) entry.o syscall_wrap.o
 
 %.x: %.b.c
 	echo cc1 $<
