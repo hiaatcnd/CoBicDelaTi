@@ -176,7 +176,7 @@ serve_set_size(u_int envid, struct Fsreq_set_size *rq)
 		ipc_send(envid, r, 0, 0);
 		return;
 	}
-	
+
 	ipc_send(envid, 0, 0, 0);
 }
 
@@ -191,7 +191,7 @@ serve_close(u_int envid, struct Fsreq_close *rq)
 		ipc_send(envid, r, 0, 0);
 		return;
 	}
-	
+
 	file_close(pOpen->o_file);
 	ipc_send(envid, 0, 0, 0);
 }
@@ -205,9 +205,15 @@ serve_remove(u_int envid, struct Fsreq_remove *rq)
 	u_char path[MAXPATHLEN];
 
 	// Step 1: Copy in the path, making sure it's terminated.
-
+	user_bcopy(rq->req_path, path, MAXPATHLEN);
+	path[MAXPATHLEN - 1] = '\0';
 	// Step 2: Remove file from file system and response to user-level process.
+	if ((r = file_remove((char *)path)) < 0) {
+		user_panic("file_remove failed: %d, invalid path: %s", r, path);
+		ipc_send(envid, r, 0, 0);
+	}
 
+	ipc_send(envid, 0, 0, 0);
 }
 
 void
@@ -308,4 +314,3 @@ umain(void)
 
 	serve();
 }
-
