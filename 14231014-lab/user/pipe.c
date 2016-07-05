@@ -31,7 +31,7 @@ pipe(int pfd[2])
 	int r, va;
 	struct Fd *fd0, *fd1;
 
-    /*Hint: Allocate the file descriptor table entries. */
+  /*Hint: Allocate the file descriptor table entries. */
 	if ((r = fd_alloc(&fd0)) < 0
 		||  (r = syscall_mem_alloc(0, (u_int)fd0, PTE_V | PTE_R | PTE_LIBRARY)) < 0) {
 		goto err;
@@ -42,7 +42,7 @@ pipe(int pfd[2])
 		goto err1;
 	}
 
-    /*Hint: Allocate the pipe structure as first data page in both. */
+  /*Hint: Allocate the pipe structure as first data page in both. */
 	va = fd2data(fd0);
 
 	if ((r = syscall_mem_alloc(0, va, PTE_V | PTE_R | PTE_LIBRARY)) < 0) {
@@ -54,7 +54,7 @@ pipe(int pfd[2])
 		goto err3;
 	}
 
-    /*Hint: Set up fd structures. */
+  /*Hint: Set up fd structures. */
 	fd0->fd_dev_id = devpipe.dev_id;
 	fd0->fd_omode = O_RDONLY;
 
@@ -93,9 +93,16 @@ _pipeisclosed(struct Fd *fd, struct Pipe *p)
 {
 	int pfd, pfp, runs;
 
-    /*Step 1: Get reference of fd and p, and check if they are the same. */
+	/*Step 1: Get reference of fd and p, and check if they are the same. */
+	pfd = pageref(fd);
+	pfp = pageref(p);
 
-    /*Step 2: If they are the same, return 1; otherwise return 0. */
+	/*Step 2: If they are the same, return 1; otherwise return 0. */
+	if (pfd == pfp) {
+	  return 1;
+	} else {
+	  return 0;
+	}
 }
 
 int
@@ -121,7 +128,7 @@ pipeisclosed(int fdnum)
  *  instead of yielding.
  *  If the pipe is empty and closed and you didn't copy
  *  any data out, return 0.
- * 
+ *
  * Hints:
  *  You may use these functions:
  *      _pipeisclosed , fd2data
@@ -132,22 +139,35 @@ piperead(struct Fd *fd, void *vbuf, u_int n, u_int offset)
 	int i;
 	struct Pipe *p;
 	char *rbuf;
+	//writef("ALEPH_DEBUG: piperead: p_rpos = %d, n = %d\n",p->p_rpos,n);
+	/*Step 1: Get the pipe p according to fd. And vbuf is the reading buffer. */
+	p = (struct Pipe *)fd2data(fd);
+	rbuf = vbuf;
+	i = 0;
 
-    /*Step 1: Get the pipe p according to fd. And vbuf is the reading buffer. */
-
-    /*Step 2: If pointer of reading is ahead of writing,then yield. */
-	
-    /*Step 3: p_buf's size is BY2PIPE, and you should use it to fill rbuf. */
-	
+	while((i < n) && (!_pipeisclosed(fd, p)) && (p->p_rpos >= p->p_wpos)){
+	  /*Step 2: If pointer of reading is ahead of writing,then yield. */
+	  //writef("ALEPH_DEBUG: reader yield, p->p_rpos = %d, p->p_wpos = %d\n", p->p_rpos, p->p_wpos);
+	  syscall_yield();
+	}
+	/*Step 3: p_buf's size is BY2PIPE, and you should use it to fill rbuf. */
+	while((i < n) && (p->p_rpos < p->p_wpos)){
+	  //writef("ALEPH_DEBUG: piperead: p_rpos = %d, n = %d\n",p->p_rpos,n);
+	  rbuf[i] = p->p_buf[p->p_rpos % BY2PIPE];
+	  i++;
+	  p->p_rpos++;
+	}
+	//writef("ALEPH_DEBUG: piperead: RETURN i = %d\n",i);
+	return i;
 }
 
 /* Overview:
- *  Write a loop that transfers one byte at a time.Unlik in 
- *  read, it is not okay to write only some of the data. 
- *  If the pipe fills and you've only copied some of the data, 
- *  wait for the pipe to empty and then keep copying. 
+ *  Write a loop that transfers one byte at a time.Unlik in
+ *  read, it is not okay to write only some of the data.
+ *  If the pipe fills and you've only copied some of the data,
+ *  wait for the pipe to empty and then keep copying.
  *  If the pipe is full and closed, return 0.
- *  
+ *
  * Hints:
  *  You may use these functions:
  *      _pipeisclosed , fd2data
@@ -159,12 +179,25 @@ pipewrite(struct Fd *fd, const void *vbuf, u_int n, u_int offset)
 	struct Pipe *p;
 	char *wbuf;
 
-    /*Step 1: Get the pipe p according to fd. And vbuf is the writing buffer. */
+	/*Step 1: Get the pipe p according to fd. And vbuf is the writing buffer. */
+	p = (struct Pipe *)fd2data(fd);
+	wbuf = vbuf;
+	i = 0;
 
-    /*Step 2: If the difference between the pointer of writing and reading is larger than BY2PIPE, then yield. */
-
-    /*Step 3: p_buf's size is BY2PIPE, and you should use it to fill rbuf. */
-	
+	while((i < n) && (!_pipeisclosed(fd, p))){
+	  //writef("ALEPH_DEBUG: p_wpos = %d, i=%d, n=%d\n",p->p_wpos,i,n);
+	  /*Step 2: If the difference between the pointer of writing and reading is larger than BY2PIPE, then yield. */
+	  while(p->p_wpos - p->p_rpos >= BY2PIPE){
+	    //writef("ALEPH_DEBUG: writer yield, p->p_rpos = %d, p->p_wpos = %d\n", p->p_rpos, p->p_wpos);
+	    syscall_yield();
+	  }
+	  /*Step 3: p_buf's size is BY2PIPE, and you should use it to fill rbuf. */
+	  p->p_buf[p->p_wpos % BY2PIPE] = wbuf[i];
+	  i++;
+	  p->p_wpos++;
+	}
+	//writef("ALEPH_DEBUG: pipewrite RETURN i = %d\n",i);
+	return i;
 }
 
 static int
@@ -183,6 +216,6 @@ pipestat(struct Fd *fd, struct Stat *stat)
 static int
 pipeclose(struct Fd *fd)
 {
+	syscall_mem_unmap(0, fd2data(fd));
 	return 0;
 }
-

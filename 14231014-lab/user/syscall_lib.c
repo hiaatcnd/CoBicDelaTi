@@ -93,3 +93,9 @@ syscall_ipc_recv(u_int dstva)
 {
 	msyscall(SYS_ipc_recv, dstva, 0, 0, 0, 0);
 }
+
+int
+syscall_cgetc()
+{
+	return msyscall(SYS_cgetc, 0, 0, 0, 0, 0);
+}

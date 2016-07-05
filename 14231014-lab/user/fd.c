@@ -215,16 +215,18 @@ readn(int fdnum, void *buf, u_int n)
 
 	for (tot = 0; tot < n; tot += m) {
 		m = read(fdnum, (char *)buf + tot, n - tot);
-
+		writef("[%08x] read m = %d\n", env->env_id, m);
 		if (m < 0) {
+			writef("[%08x] readn RETURN m < 0 \n", env->env_id);
 			return m;
 		}
 
 		if (m == 0) {
+			writef("[%08x] readn RETURN m == 0 \n", env->env_id);
 			break;
 		}
 	}
-
+	writef("[%08x] readn RETURN tot = %d\n", env->env_id, tot);
 	return tot;
 }
 
@@ -303,4 +305,3 @@ stat(const char *path, struct Stat *stat)
 	close(fd);
 	return r;
 }
-
