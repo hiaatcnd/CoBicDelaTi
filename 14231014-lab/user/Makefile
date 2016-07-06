@@ -26,7 +26,7 @@ USERLIB := printf.o \
 
 CFLAGS += -nostdlib -static
 
-all: fktest.x fktest.b testfdsharing.x testfdsharing.b pingpong.x pingpong.b idle.x testspawn.x testarg.b testpipe.x testpiperace.x icode.x init.b sh.b cat.b ls.b $(USERLIB) entry.o syscall_wrap.o
+all: fktest.x fktest.b testfdsharing.x testfdsharing.b pingpong.x pingpong.b idle.x testspawn.x testarg.b testpipe.x testpiperace.x icode.x init.b sh.b cat.b ls.b $(USERLIB) entry.o syscall_wrap.o testsfork.x
 
 %.x: %.b.c
 	echo cc1 $<
@@ -38,7 +38,7 @@ all: fktest.x fktest.b testfdsharing.x testfdsharing.b pingpong.x pingpong.b idl
 	chmod +x ./bintoc
 	./bintoc $* $< > $@~ && mv -f $@~ $@
 #	grep \. $@
-	
+
 %.b: entry.o syscall_wrap.o %.o $(USERLIB)
 	echo ld $@
 	$(LD) -o $@ $(LDFLAGS) -G 0 -static -n -nostdlib -T ./user.lds $^

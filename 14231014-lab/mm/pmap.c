@@ -4,6 +4,7 @@
 #include "env.h"
 #include "error.h"
 
+#define UVPD (UVPT+(UVPT>>12)*4)
 
 
 /* These variables are set by i386_detect_memory() */
@@ -25,7 +26,7 @@ static struct Page_list page_free_list;	/* Free list of physical pages */
 // 	Set basemem to be 64MB, and calculate corresponding npage value.
 void mips_detect_memory()
 {
-	/* Step 1: Initialize basemem. 
+	/* Step 1: Initialize basemem.
 	 * (When use real computer, CMOS tells us how many kilobytes there are). */
 	basemem = 64 * 1024 * 1024;
 	extmem = 0;
@@ -41,9 +42,9 @@ void mips_detect_memory()
 
 // Overview:
 // 	Allocate `n` bytes physical memory with alignment `align`, if `clear` is set, clear the
-// 	allocated memory. 
+// 	allocated memory.
 // 	This allocator is used only while setting up virtual memory system.
-// 
+//
 // Post-Condition:
 //	If we're out of memory, should panic, else return this address of memory we have allocated.
 static void *alloc(u_int n, u_int align, int clear)
@@ -51,7 +52,7 @@ static void *alloc(u_int n, u_int align, int clear)
 	extern char end[];
 	u_long alloced_mem;
 
-	/* Initialize `freemem` if this is the first time. The first virtual address that the 
+	/* Initialize `freemem` if this is the first time. The first virtual address that the
 	 * linker did *not* assign to any kernel code or global variables. */
 	if (freemem == 0) {
 		freemem = (u_long)end;
@@ -85,7 +86,7 @@ static void *alloc(u_int n, u_int align, int clear)
 // Overview:
 // 	Get the page table entry for virtual address `va` in the given
 // 	page directory `pgdir`.
-//	If the page table is not exist and the parameter `create` is set to 1, 
+//	If the page table is not exist and the parameter `create` is set to 1,
 //	then create it.
 static Pte *boot_pgdir_walk(Pde *pgdir, u_long va, int create)
 {
@@ -96,12 +97,12 @@ static Pte *boot_pgdir_walk(Pde *pgdir, u_long va, int create)
 	/* Step 1: Get the corresponding page directory entry and page table. */
 
 	/* Hint: Use KADDR and PTE_ADDR to get the page table from page directory
-	 * entry value. */  
+	 * entry value. */
 	pgdir_entryp = (Pde *)(&pgdir[PDX(va)]);
 	pgtable = (Pte *)KADDR(PTE_ADDR(*pgdir_entryp));
 
 	/* Step 2: If the corresponding page table is not exist and parameter `create`
-	 * is set, create one. And set the correct permission bits for this new page 
+	 * is set, create one. And set the correct permission bits for this new page
 	 * table. */
 	if (*pgdir_entryp == 0) {
 		if (create == 0) {
@@ -118,13 +119,13 @@ static Pte *boot_pgdir_walk(Pde *pgdir, u_long va, int create)
 }
 
 // Overview:
-// 	Map [va, va+size) of virtual address space to physical [pa, pa+size) in the page 
-//	table rooted at pgdir. 
+// 	Map [va, va+size) of virtual address space to physical [pa, pa+size) in the page
+//	table rooted at pgdir.
 //	Use permission bits `perm|PTE_V` for the entries.
 // 	Use permission bits `perm` for the entries.
 //
 // Pre-Condition:
-// 	Size is a multiple of BY2PG. 
+// 	Size is a multiple of BY2PG.
 void boot_map_segment(Pde *pgdir, u_long va, u_long size, u_long pa, int perm)
 {
 	int i, va_temp;
@@ -148,7 +149,7 @@ void boot_map_segment(Pde *pgdir, u_long va, u_long size, u_long pa, int perm)
 
 // Overview:
 // 	Set up two-level page table.
-// 
+//
 // Hint:  You can get more details about `UPAGES` and `UENVS` in include/mmu.h. */
 void mips_vm_init()
 {
@@ -166,7 +167,7 @@ void mips_vm_init()
 	boot_pgdir = pgdir;
 
 	/* Step 2: Allocate proper size of physical memory for global array `pages`,
-	 * for physical memory management. Then, map virtual address `UPAGES` to 
+	 * for physical memory management. Then, map virtual address `UPAGES` to
 	 * physical address `pages` allocated before. For consideration of alignment,
 	 * you should round up the memory size before map. */
 	pages = (struct Page *)alloc(npage * sizeof(struct Page), BY2PG, 1);
@@ -180,9 +181,9 @@ void mips_vm_init()
 	boot_map_segment(pgdir, UENVS, n, PADDR(envs), PTE_R);
 }
 
-// Overview: 
+// Overview:
 // 	Initialize page structure and memory free list.
-// 	The `pages` array has one `struct Page` entry per physical page. Pages 
+// 	The `pages` array has one `struct Page` entry per physical page. Pages
 //	are reference counted, and free pages are kept on a linked list.
 // Hint:
 //	Use `LIST_INSERT_HEAD` to insert something to list.
@@ -214,14 +215,14 @@ page_init(void)
 
 // Overview:
 //	Allocates a physical page from free memory, and clear this page.
-// 
+//
 // Post-Condition:
-//	If failed to allocate a new page(out of memory(there's no free page)), 
+//	If failed to allocate a new page(out of memory(there's no free page)),
 // 	return -E_NO_MEM.
 //	Else, set the address of allocated page to *pp, and returned 0.
-// 
-// Note: 
-// 	Does NOT increment the reference count of the page - the caller must do 
+//
+// Note:
+// 	Does NOT increment the reference count of the page - the caller must do
 // 	these if necessary (either explicitly or via page_insert).
 //
 // Hint:
@@ -264,14 +265,14 @@ page_free(struct Page *pp)
 		LIST_INSERT_HEAD(&page_free_list, pp, pp_link);
 		return;
 	}
-	
-	/* Step 3: If the value of `pp_ref` less than 0, some error must occurred before, 
+
+	/* Step 3: If the value of `pp_ref` less than 0, some error must occurred before,
 	 * so PANIC !!! */
 	panic("cgh:pp->pp_ref is less than zero\n");
 }
 
 // Overview:
-// 	Given `pgdir`, a pointer to a page directory, pgdir_walk returns a pointer 
+// 	Given `pgdir`, a pointer to a page directory, pgdir_walk returns a pointer
 // 	to the page table entry (with permission PTE_R|PTE_V) for virtual address 'va'.
 //
 // Pre-Condition:
@@ -281,7 +282,7 @@ page_free(struct Page *pp)
 // 	If we're out of memory, return -E_NO_MEM.
 //	Else, we get the page table entry successfully, store the value of page table
 //	entry to *ppte, and return 0, indicating success.
-// 
+//
 // Hint:
 //	We use a two-level pointer to store page table entry and return a state code to indicate
 //	whether this function execute successfully or not.
@@ -298,8 +299,8 @@ pgdir_walk(Pde *pgdir, u_long va, int create, Pte **ppte)
 	pgtable = (Pte *)KADDR(PTE_ADDR(*pgdir_entryp));
 
 	/* Step 2: If the corresponding page table is not exist(valid) and parameter `create`
-	 * is set, create one. And set the correct permission bits for this new page 
-	 * table. 
+	 * is set, create one. And set the correct permission bits for this new page
+	 * table.
 	 * When creating new page table, maybe out of memory. */
 	if ((*pgdir_entryp & PTE_V) == 0) {
 		if (create == 0) {
@@ -333,7 +334,7 @@ pgdir_walk(Pde *pgdir, u_long va, int create, Pte **ppte)
 // Post-Condition:
 //  Return 0 on success
 //  Return -E_NO_MEM, if page table couldn't be allocated
-// 
+//
 // Hint:
 //	If there is already a page mapped at `va`, call page_remove() to release this mapping.
 //	The `pp_ref` should be incremented if the insertion succeeds.
@@ -432,6 +433,7 @@ page_remove(Pde *pgdir, u_long va)
 	/* Hint: When there's no virtual address mapped to this page, release it. */
 	ppage->pp_ref--;
 	if (ppage->pp_ref == 0) {
+		printf("PAGE FREE!! va = %08x\n", va);
 		page_free(ppage);
 	}
 
@@ -560,6 +562,18 @@ void pageout(int va, int context)
 {
 	u_long r;
 	struct Page *p = NULL;
+	struct Page *pp = NULL;
+	int i;
+	Pte *ppte;
+/*
+	for (i = 0; i < (UTOP - 2*PDMAP)/BY2PG; i++) {
+		if (((u_int *)UVPD)[i / PTE2PT] != 0 && ((u_int *)UVPT)[i] != 0) {
+			printf("pmap check: i = %d\n",i);
+			pp = page_lookup((Pde *)context, i*BY2PG, &ppte);
+			printf("pmap check: pp->pp_ref = %d\n",pp->pp_ref );
+		}
+	}
+*/
 
 	if (context < 0x80000000) {
 		panic("tlb refill and alloc error!");
@@ -582,4 +596,3 @@ void pageout(int va, int context)
 	page_insert((Pde *)context, p, VA2PFN(va), PTE_R);
 	printf("pageout:\t@@@___0x%x___@@@  ins a page \n", va);
 }
-

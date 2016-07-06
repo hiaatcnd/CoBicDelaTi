@@ -7,10 +7,11 @@
 
 extern char *KERNEL_SP;
 extern struct Env *curenv;
+#define UVPD (UVPT+(UVPT>>12)*4)
 
 /* Overview:
  * 	This function is used to print a character on screen.
- * 
+ *
  * Pre-Condition:
  * 	`c` is the character you want to print.
  */
@@ -24,8 +25,8 @@ void sys_putchar(int sysno, int c, int a2, int a3, int a4, int a5)
  * 	This function enables you to copy content of `srcaddr` to `destaddr`.
  *
  * Pre-Condition:
- * 	`destaddr` and `srcaddr` can't be NULL. Also, the `srcaddr` area 
- * 	shouldn't overlap the `destaddr`, otherwise the behavior of this 
+ * 	`destaddr` and `srcaddr` can't be NULL. Also, the `srcaddr` area
+ * 	shouldn't overlap the `destaddr`, otherwise the behavior of this
  * 	function is undefined.
  *
  * Post-Condition:
@@ -73,8 +74,8 @@ void sys_yield(void)
  * 	This function is used to destroy the current environment.
  *
  * Pre-Condition:
- * 	The parameter `envid` must be the environment id of a 
- * process, which is either a child of the caller of this function 
+ * 	The parameter `envid` must be the environment id of a
+ * process, which is either a child of the caller of this function
  * or the caller itself.
  *
  * Post-Condition:
@@ -100,7 +101,7 @@ int sys_env_destroy(int sysno, u_int envid)
 
 /* Overview:
  * 	Set envid's pagefault handler entry point and exception stack.
- * 
+ *
  * Pre-Condition:
  * 	xstacktop points one byte past exception stack.
  *
@@ -134,7 +135,7 @@ int sys_set_pgfault_handler(int sysno, u_int envid, u_int func, u_int xstacktop)
  *
  * 	If a page is already mapped at 'va', that page is unmapped as a
  * side-effect.
- * 
+ *
  * Pre-Condition:
  * perm -- PTE_V is required,
  *         PTE_COW is not allowed(return -E_INVAL),
@@ -319,7 +320,7 @@ int sys_env_alloc(void)
  * Pre-Condition:
  * 	status should be one of `ENV_RUNNABLE`, `ENV_NOT_RUNNABLE` and
  * `ENV_FREE`. Otherwise return -E_INVAL.
- * 
+ *
  * Post-Condition:
  * 	Returns 0 on success, < 0 on error.
  * 	Return -E_INVAL if status is not a valid status for an environment.
@@ -364,7 +365,7 @@ int sys_set_trapframe(int sysno, u_int envid, struct Trapframe *tf)
 }
 
 /* Overview:
- * 	Kernel panic with message `msg`. 
+ * 	Kernel panic with message `msg`.
  *
  * Pre-Condition:
  * 	msg can't be NULL
@@ -379,17 +380,17 @@ void sys_panic(int sysno, char *msg)
 }
 
 /* Overview:
- * 	This function enables caller to receive message from 
- * other process. To be more specific, it will flag 
- * the current process so that other process could send 
+ * 	This function enables caller to receive message from
+ * other process. To be more specific, it will flag
+ * the current process so that other process could send
  * message to it.
  *
  * Pre-Condition:
  * 	`dstva` is valid (Note: NULL is also a valid value for `dstva`).
- * 
+ *
  * Post-Condition:
- * 	This syscall will set the current process's status to 
- * ENV_NOT_RUNNABLE, giving up cpu. 
+ * 	This syscall will set the current process's status to
+ * ENV_NOT_RUNNABLE, giving up cpu.
  */
 void sys_ipc_recv(int sysno, u_int dstva)
 {
@@ -510,3 +511,110 @@ int sys_ipc_can_send(int sysno, u_int envid, u_int value, u_int srcva,
 	return 0;
 }
 
+static int s_mem_map(int sysno, u_int srcid, u_int srcva, u_int dstid, u_int dstva,	u_int perm)
+{
+	// Your code here.
+	int ret;
+	u_int round_srcva, round_dstva;
+	struct Env *srcenv;
+	struct Env *dstenv;
+	struct Page *ppage;
+	Pte *ppte;
+
+	ppage = NULL;
+	ret = 0;
+	round_srcva = ROUNDDOWN(srcva, BY2PG);
+	round_dstva = ROUNDDOWN(dstva, BY2PG);
+
+	//printf("sys_mem_map comes 2\n");
+	if ((perm & PTE_V) == 0) {
+		return -E_INVAL;
+	}
+
+	//printf("sys_mem_map comes 3\n");
+	if ((ret = envid2env(srcid, &srcenv, 0)) < 0) {
+		return ret;
+	}
+
+	//printf("sys_mem_map comes 4\n");
+	if ((ret = envid2env(dstid, &dstenv, 0)) < 0) {
+		return ret;
+	}
+
+	//printf("sys_mem_map comes 5 pgdir %x, va %x\n", srcenv->env_pgdir,round_srcva);
+	ppage = page_lookup(srcenv->env_pgdir, round_srcva, &ppte);
+
+	if (ppage == 0) {
+		return -E_INVAL;
+	}
+
+	//printf("sys_mem_map comes 6\n");
+	ppage->pp_ref++;
+	printf("round_srcva = %08x; round_dstva = %08x; ppage->pp_ref = %d\n",round_srcva,round_dstva,ppage->pp_ref);
+	//ret = page_insert(dstenv->env_pgdir, ppage, round_dstva, perm);
+	//printf("sys_mem_map comes 7\n");
+	return ret;
+	//	panic("sys_mem_map not implemented");
+}
+
+int sys_s_env_alloc(u_int envid)
+{
+	// Your code here.
+	int r;
+	struct Env *e;
+	struct Env *parent;
+	int i;
+	struct Page *p;
+	Pte *ppte;
+
+	if( (r = envid2env(curenv->env_id, &parent, 0)) < 0){
+		panic("env_setup_vm - envid2env error\n");
+	}
+
+
+	if ((r = env_alloc(&e, curenv->env_id)) < 0) {
+		return r;
+	}
+
+	bcopy(KERNEL_SP - sizeof(struct Trapframe), &e->env_tf,
+		  sizeof(struct Trapframe));
+	printf("sys_env_alloc():the child pc :%x\n", e->env_tf.cp0_epc);
+	e->env_tf.pc = e->env_tf.cp0_epc;
+	//e->env_tf.cp0_status = 0x1000000C;
+	e->env_status = ENV_NOT_RUNNABLE;
+	e->env_tf.regs[2] = 0;	//important
+	e->env_pgfault_handler = 0;//curenv->env_pgfault_handler;
+
+	for (i = 0; i < PDX((UTOP - 2*PDMAP)); i++) {
+		if((parent->env_pgdir)[i] != 0){
+			(e->env_pgdir)[i] = (parent->env_pgdir)[i];
+			r = s_mem_map(0, curenv->env_id, UVPT + i * BY2PG, e->env_id, UVPT + i * BY2PG, ((parent->env_pgdir)[i])&0xfff);
+			printf("s_setup 1: UVPT + i * BY2PG = %08x; pgdir[i] = %08x; (parent->env_pgdir)[i] = %08x; r = %d\n",UVPT + i * BY2PG,e->env_pgdir[i] ,(parent->env_pgdir)[i], r );
+		}
+	}
+	//printf("!!!!!! PTX((UTOP - 2*PDMAP)) = %08x\n",PTX((UTOP - 2*PDMAP)) );
+	for (i = 0; i < (UTOP - 2*PDMAP)/BY2PG; i++) {
+		if (((u_int *)UVPD)[i / PTE2PT] != 0 && ((u_int *)UVPT)[i] != 0) {
+			s_mem_map(0, curenv->env_id, i * BY2PG, e->env_id, i * BY2PG, ((u_int *)UVPT)[i]&0xfff);
+			printf("s_setup 2: i * BY2PG = %08x; perm = %08x \n",i * BY2PG ,((u_int *)UVPT)[i]&0xfff);
+		}
+	}
+	/*
+	for (i = 0; i < (UTOP - 2*PDMAP)/BY2PG; i++) {
+		if (((u_int *)UVPD)[i / PTE2PT] != 0 && ((u_int *)UVPT)[i] != 0) {
+			printf("s_setup check: i = %d\n",i);
+			p = page_lookup(e->env_pgdir, i*BY2PG, &ppte);
+			printf("s_setup check: p->pp_ref = %d\n",p->pp_ref );
+		}
+	}
+	for (i = UVPT/BY2PG; i < (UVPT + PDMAP)/BY2PG; i++) {
+		if (((u_int *)UVPD)[i / PTE2PT] != 0 && ((u_int *)UVPT)[i] != 0) {
+			printf("s_setup check: i = %d\n",i);
+			p = page_lookup(e->env_pgdir, i*BY2PG, &ppte);
+			printf("s_setup check: p->pp_ref = %d\n",p->pp_ref );
+		}
+	}
+*/
+	return e->env_id;
+	//	panic("sys_env_alloc not implemented");
+}

@@ -95,7 +95,7 @@ syscall_ipc_recv(u_int dstva)
 }
 
 int
-syscall_cgetc()
+syscall_s_env_alloc(u_int envid)
 {
-	return msyscall(SYS_cgetc, 0, 0, 0, 0, 0);
+	return msyscall(SYS_s_env_alloc, envid, 0, 0, 0, 0);
 }

@@ -1795,7 +1795,7 @@ Disassembly of section .text:
   401ad4:	03e00008 	jr	ra
   401ad8:	27bd0020 	addiu	sp,sp,32
 
-00401adc <syscall_cgetc>:
+00401adc <syscall_s_env_alloc>:
   401adc:	27bdffe0 	addiu	sp,sp,-32
   401ae0:	afbf0018 	sw	ra,24(sp)
   401ae4:	afa00010 	sw	zero,16(sp)
@@ -3789,7 +3789,7 @@ Disassembly of section .text:
   403850:	00008021 	move	s0,zero
   403854:	0c100619 	jal	401864 <syscall_yield>
   403858:	00000000 	nop
-  40385c:	0c1006b7 	jal	401adc <syscall_cgetc>
+  40385c:	0c1006b7 	jal	401adc <syscall_s_env_alloc>
   403860:	00000000 	nop
   403864:	1040fffb 	beqz	v0,403854 <cons_read+0x20>
   403868:	00408021 	move	s0,v0

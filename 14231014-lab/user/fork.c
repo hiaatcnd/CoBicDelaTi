@@ -141,7 +141,7 @@ duppage(u_int envid, u_int pn)
 	 */
 	// writef("");
 	u_int addr;
-	u_int perm; 
+	u_int perm;
 
 	perm = (*vpt)[pn] & 0xfff;
 	addr = pn * BY2PG;
@@ -230,9 +230,61 @@ fork(void)
 }
 
 // Challenge!
+static void
+sduppage(u_int envid, u_int pn)
+{
+	int r;
+	u_int addr;
+	u_int perm;
+
+	perm = (*vpt)[pn] & 0xfff;
+	addr = pn * BY2PG;
+
+	r = syscall_mem_map(0, addr, envid, addr, perm);
+	writef("--sduppage-- pn = %d; addr = %08x; perm = %08x; r = %d\n",pn,addr,perm,r);
+
+
+	return;
+	//	user_panic("duppage not implemented");
+}
+
+
 int
 sfork(void)
 {
-	user_panic("sfork not implemented");
-	return -E_INVAL;
+	// Your code here.
+	u_int newenvid;
+	extern struct Env *envs;
+	extern struct Env *env;
+	u_int i;
+
+
+	set_pgfault_handler(pgfault);
+
+	if ((newenvid = syscall_s_env_alloc(0)) < 0) {
+		writef("sfork:no env can be alloced\n");
+		return newenvid;
+	}
+	writef("sfork:newenvid = %d\n",newenvid);
+
+	if (newenvid == 0) {
+		env = &envs[ENVX(syscall_getenvid())];
+		return 0;
+	}
+
+	writef("sfork:duppage start va = %08x\n",UTOP - 2*PDMAP);
+	for (i = ((UTOP - 2*PDMAP) / BY2PG); i < (UTOP / BY2PG) - 1; i++) {
+		if (((*vpd)[i / PTE2PT]) != 0 && ((*vpt)[i]) != 0) {
+			writef("sfork:duppage va = %08x\n",i*BY2PG);
+			duppage(newenvid, i);
+		}
+	}
+
+	if (syscall_mem_alloc(newenvid, UXSTACKTOP - BY2PG, PTE_V | PTE_R) < 0) {
+		writef("syscall_mem_alloc for UXSTACK is wrong\n");
+	}
+
+	syscall_set_pgfault_handler(newenvid, __asm_pgfault_handler, UXSTACKTOP);
+	syscall_set_env_status(newenvid, ENV_RUNNABLE);
+	return newenvid;
 }

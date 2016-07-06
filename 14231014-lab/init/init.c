@@ -22,7 +22,7 @@ void mips_init()
 	env_init();
 
 	ENV_CREATE(fs_serv);
-	ENV_CREATE(user_testpipe);
+	ENV_CREATE(user_testsfork);
 	// initialize exception vector.
 	trap_init();
 	// initialize PIT.

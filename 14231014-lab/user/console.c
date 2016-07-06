@@ -59,7 +59,7 @@ cons_read(struct Fd *fd, void *vbuf, u_int n, u_int offset)
 		return 0;
 	}
 
-	while ((c = syscall_cgetc()) == 0) {
+	while ((c = syscall_s_env_alloc(0)) == 0) {
 		syscall_yield();
 	}
 

@@ -48,6 +48,7 @@ extern struct Env *curenv;	        // the current env
 
 void env_init(void);
 int env_alloc(struct Env **e, u_int parent_id);
+int env_s_alloc(struct Env **e, u_int parent_id);
 void env_free(struct Env *);
 void env_create(u_char *binary, int size);
 void env_destroy(struct Env *e);

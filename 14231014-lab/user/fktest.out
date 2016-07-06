@@ -1245,7 +1245,7 @@ Disassembly of section .text:
   40126c:	03e00008 	jr	ra
   401270:	27bd0020 	addiu	sp,sp,32
 
-00401274 <syscall_cgetc>:
+00401274 <syscall_s_env_alloc>:
   401274:	27bdffe0 	addiu	sp,sp,-32
   401278:	afbf0018 	sw	ra,24(sp)
   40127c:	3c040040 	lui	a0,0x40
@@ -3244,7 +3244,7 @@ Disassembly of section .text:
   403000:	00008021 	move	s0,zero
   403004:	0c1003fd 	jal	400ff4 <syscall_yield>
   403008:	00000000 	nop
-  40300c:	0c10049d 	jal	401274 <syscall_cgetc>
+  40300c:	0c10049d 	jal	401274 <syscall_s_env_alloc>
   403010:	00000000 	nop
   403014:	1040fffb 	beqz	v0,403004 <cons_read+0x20>
   403018:	00408021 	move	s0,v0

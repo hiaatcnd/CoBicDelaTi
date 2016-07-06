@@ -221,7 +221,7 @@ Disassembly of section .text:
  2f0:	03e00008 	jr	ra
  2f4:	27bd0020 	addiu	sp,sp,32
 
-000002f8 <syscall_cgetc>:
+000002f8 <syscall_s_env_alloc>:
  2f8:	27bdffe0 	addiu	sp,sp,-32
  2fc:	afbf0018 	sw	ra,24(sp)
  300:	afa00010 	sw	zero,16(sp)

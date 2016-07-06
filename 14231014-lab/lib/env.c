@@ -1,4 +1,4 @@
-/* Notes written by Qian Liu <qianlxc@126.com> 
+/* Notes written by Qian Liu <qianlxc@126.com>
   If you find any bug,please contact this email.*/
 
 #include <mmu.h>
@@ -86,7 +86,7 @@ int envid2env(u_int envid, struct Env **penv, int checkperm)
 /* Overview:
  *  Mark all environments in 'envs' as free and insert them into the env_free_list.
  *  Insert in reverse order,so that the first call to env_all() return envs[0].
- *  
+ *
  * Hints:
  *  You may use these defines to make it:
  *      LIST_INIT,LIST_INSERT_HEAD
@@ -133,7 +133,7 @@ env_setup_vm(struct Env *e)
 	}
 	p->pp_ref++;
 	pgdir = (Pde *)page2kva(p);
-    
+
     /*Step 2: Zero pgdir's field before UTOP. */
 	for (i = 0; i < PDX(UTOP); i++) {
 		pgdir[i] = 0;
@@ -187,12 +187,12 @@ env_alloc(struct Env **new, u_int parent_id)
 {
 	int r;
 	struct Env *e;
-    
+
     /*Step 1: Get a new Env from env_free_list*/
 	if (!(e = LIST_FIRST(&env_free_list))) {
 		return -E_NO_FREE_ENV;
 	}
-    
+
     /*Step 2: Call some function(has been implemented) to intial kernel memory layout for this new Env.
      *this function mainly map the kernel address to this new Env address. */
 	if ((r = env_setup_vm(e)) < 0) {
@@ -204,8 +204,8 @@ env_alloc(struct Env **new, u_int parent_id)
 	e->env_status = ENV_RUNNABLE;
 
     /***Your Question Here***/
-    
-    /*Step 4: focus on initializing env_tf structure, located at this new Env. 
+
+    /*Step 4: focus on initializing env_tf structure, located at this new Env.
      * especially the sp register,CPU status. */
 	e->env_tf.regs[29] = USTACKTOP;
 	e->env_tf.cp0_status = 0x10001004;
@@ -222,6 +222,156 @@ env_alloc(struct Env **new, u_int parent_id)
     /*Step 5: Remove the new Env from Env free list*/
 	LIST_REMOVE(e, env_link);
 	*new = e;
+	return 0;
+}
+
+static int s_mem_map(int sysno, u_int srcid, u_int srcva, u_int dstid, u_int dstva,	u_int perm)
+{
+	// Your code here.
+	int ret;
+	u_int round_srcva, round_dstva;
+	struct Env *srcenv;
+	struct Env *dstenv;
+	struct Page *ppage;
+	Pte *ppte;
+
+	ppage = NULL;
+	ret = 0;
+	round_srcva = ROUNDDOWN(srcva, BY2PG);
+	round_dstva = ROUNDDOWN(dstva, BY2PG);
+
+	//printf("sys_mem_map comes 2\n");
+	if ((perm & PTE_V) == 0) {
+		return -E_INVAL;
+	}
+
+	//printf("sys_mem_map comes 3\n");
+	if ((ret = envid2env(srcid, &srcenv, 0)) < 0) {
+		return ret;
+	}
+
+	//printf("sys_mem_map comes 4\n");
+	if ((ret = envid2env(dstid, &dstenv, 0)) < 0) {
+		return ret;
+	}
+
+	//printf("sys_mem_map comes 5 pgdir %x, va %x\n", srcenv->env_pgdir,round_srcva);
+	ppage = page_lookup(srcenv->env_pgdir, round_srcva, &ppte);
+
+	if (ppage == 0) {
+		return -E_INVAL;
+	}
+
+	//printf("sys_mem_map comes 6\n");
+	ret = page_insert(dstenv->env_pgdir, ppage, round_dstva, perm);
+	//printf("sys_mem_map comes 7\n");
+	return ret;
+	//	panic("sys_mem_map not implemented");
+}
+
+static int
+env_s_setup_vm(struct Env *e, u_int parent_id)
+{
+	struct Env *parent;
+	int i, r;
+	struct Page *p = NULL;
+	Pde *pgdir;
+
+	if( (r = envid2env(parent_id, &parent, 0)) < 0){
+		panic("env_setup_vm - envid2env error\n");
+	}
+
+  /*Step 1: Allocate a page for the page directory and add its reference.
+   *pgdir is the page directory of Env e. */
+	if ((r = page_alloc(&p)) < 0) {
+		panic("env_setup_vm - page_alloc error\n");
+		return r;
+	}
+	p->pp_ref++;
+	pgdir = (Pde *)page2kva(p);
+
+    /*Step 2: Zero pgdir's field before UTOP. */
+	for (i = 0; i < PDX(UTOP); i++) {
+		pgdir[i] = 0;
+	}
+    /*Step 3: Copy kernel's boot_pgdir to pgdir. */
+
+    /* Hint:
+     *  The VA space of all envs is identical above UTOP
+     *  (except at VPT and UVPT, which we've set below).
+     *  See ./include/mmu.h for layout.
+     *  Can you use boot_pgdir as a template?
+     */
+	for (i = PDX(UTOP); i <= PDX(~0); i++) {
+		pgdir[i] = boot_pgdir[i];
+	}
+	e->env_pgdir = pgdir;
+	e->env_cr3   = PADDR(pgdir);
+
+    /***Your Question Here***/
+
+    /*Step 4: VPT and UVPT map the env's own page table, with
+     *different permissions. */
+    e->env_pgdir[PDX(VPT)]   = e->env_cr3;
+    e->env_pgdir[PDX(UVPT)]  = e->env_cr3 | PTE_V | PTE_R;
+	return 0;
+}
+
+int
+env_s_alloc(struct Env **new, u_int parent_id)
+{
+	int r;
+	struct Env *e;
+	struct Env *parent;
+	int i;
+
+	if( (r = envid2env(parent_id, &parent, 0)) < 0){
+		panic("env_s_alloc - envid2env error\n");
+	}
+
+    /*Step 1: Get a new Env from env_free_list*/
+	if (!(e = LIST_FIRST(&env_free_list))) {
+		return -E_NO_FREE_ENV;
+	}
+
+    /*Step 2: Call some function(has been implemented) to intial kernel memory layout for this new Env.
+     *this function mainly map the kernel address to this new Env address. */
+	if ((r = env_s_setup_vm(e, parent_id)) < 0) {
+		return r;
+	}
+    /*Step 3: Initial every field of new Env to appropriate value*/
+	e->env_id = mkenvid(e);
+	e->env_parent_id = parent_id;
+	e->env_status = ENV_RUNNABLE;
+
+    /***Your Question Here***/
+
+    /*Step 4: focus on initializing env_tf structure, located at this new Env.
+     * especially the sp register,CPU status. */
+	e->env_tf.regs[29] = USTACKTOP;
+	e->env_tf.cp0_status = 0x10001004;
+
+    /* Lab4 should use:
+	e->env_ipc_blocked = 0;
+	e->env_ipc_value = 0;
+	e->env_ipc_from = 0;
+	e->env_ipc_recving = 0;
+	e->env_pgfault_handler = 0;
+	e->env_xstacktop = 0;
+    */
+
+    /*Step 5: Remove the new Env from Env free list*/
+	LIST_REMOVE(e, env_link);
+	*new = e;
+
+
+	for (i = 0; i < PDX((UTOP - 2*PDMAP)); i++) {
+		if((parent->env_pgdir)[i] != 0){
+			s_mem_map(0, parent_id, UVPT + i * BY2PG, e->env_id, UVPT + i * BY2PG, ((parent->env_pgdir)[i])&0xfff);
+			//printf("s_setup: pgdir[i] = %08x; (parent->env_pgdir)[i] = %08x \n",pgdir[i] ,(parent->env_pgdir)[i] );
+		}
+	}
+
 	return 0;
 }
 
@@ -290,7 +440,7 @@ static int load_icode_mapper(u_long va, u_int32_t sgsize,
  *  is given by the elf loader. And this function maps one page for the
  *  program's initial stack at virtual address USTACKTOP - BY2PG.
  *
- * Hints: 
+ * Hints:
  *  All mappings are read/write including those of the text segment.
  *  You may use these :
  *      page_alloc, page_insert, page2kva , e->env_pgdir and load_elf.
@@ -308,7 +458,7 @@ load_icode(struct Env *e, u_char *binary, u_int size)
 	u_long entry_point;
 	u_long r;
     u_long perm;
-    
+
     /*Step 1: alloc a page. */
 	if ((r = page_alloc(&p)) < 0) {
 		panic ("page alloc error!");
@@ -332,11 +482,11 @@ load_icode(struct Env *e, u_char *binary, u_int size)
 }
 
 /* Overview:
- *  Allocates a new env with env_alloc, loads te named elf binary into 
+ *  Allocates a new env with env_alloc, loads te named elf binary into
  *  it with load_icode. This function is ONLY called during kernel
  *  initialization, before running the first user_mode environment.
  *
- * Hints: 
+ * Hints:
  *  this function wrap the env_alloc and load_icode function.
  */
 void
@@ -389,7 +539,7 @@ env_free(struct Env *e)
 }
 
 /* Overview:
- *  Frees env e, and schedules to run a new env 
+ *  Frees env e, and schedules to run a new env
  *  if e is the current env.
  */
 void
@@ -428,10 +578,11 @@ void
 env_run(struct Env *e)
 {
 	/*Step 1: save register state of curenv. */
-    
+
     /* Hint: if there is a environment running,you should do
     *  context switch.You can imitate env_destroy() 's behaviors.*/
-
+	printf("env_run e->env_pgdir[2] = %08x\n", (e->env_pgdir)[2]);
+	printf("env_run e->env_pgdir[2][0] = %08x\n", ((u_int *)KADDR((e->env_pgdir)[2]))[0]);
 	struct Trapframe  *old;
 	old = (struct Trapframe *)(TIMESTACK - sizeof(struct Trapframe));
 
@@ -449,8 +600,7 @@ env_run(struct Env *e)
      * environment   registers and drop into user mode in the
      * the   environment.
      */
-    
+
     /* Hint: You should use GET_ENV_ASID there.Think why? */
 	env_pop_tf(&(curenv->env_tf), GET_ENV_ASID(curenv->env_id));
 }
-
