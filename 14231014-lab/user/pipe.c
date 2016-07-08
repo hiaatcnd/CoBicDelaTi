@@ -91,11 +91,18 @@ err:
 static int
 _pipeisclosed(struct Fd *fd, struct Pipe *p)
 {
-	int pfd, pfp, runs;
-
+	int pfd, pfp, runs, r;
 	/*Step 1: Get reference of fd and p, and check if they are the same. */
-	pfd = pageref(fd);
-	pfp = pageref(p);
+	r = 1;
+	do{
+		if(!r){
+			writef("_pipeisclosed runs check fail\n");
+		}
+		runs = env->env_runs;
+		pfd = pageref(fd);
+		pfp = pageref(p);
+		r = 0;
+	}while(runs != env->env_runs);
 
 	/*Step 2: If they are the same, return 1; otherwise return 0. */
 	if (pfd == pfp) {
@@ -216,6 +223,12 @@ pipestat(struct Fd *fd, struct Stat *stat)
 static int
 pipeclose(struct Fd *fd)
 {
-	syscall_mem_unmap(0, fd2data(fd));
-	return 0;
+	int r = 0;
+	if((r = syscall_mem_unmap(0, fd)) < 0){
+		return r;
+	}
+	if((r = syscall_mem_unmap(0, fd2data(fd))) < 0){
+		return r;
+	}
+	return r;
 }

@@ -162,6 +162,24 @@ again:
 				//		goto runit, to execute this piece of the pipeline
 				//			and then wait for the right side to finish
 				//	user_panic("| not implemented");
+				if ((r = pipe(p)) < 0) {
+					user_panic("pipe: %e", r);
+				}
+				if ((rightpipe = fork()) < 0) {
+					user_panic("fork: %e", rightpipe);
+				}
+				if(rightpipe == 0){
+					dup(p[0], 0);
+					close(p[0]);
+					close(p[1]);
+					goto again;
+				}
+				else{
+					dup(p[1], 0);
+					close(p[1]);
+					close(p[0]);
+					goto runit;
+				}
 				break;
 		}
 	}
@@ -348,4 +366,3 @@ umain(int argc, char **argv)
 		//	sys_yield();
 	}
 }
-

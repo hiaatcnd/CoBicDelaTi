@@ -10,7 +10,7 @@ extern struct Env *curenv;
 
 /* Overview:
  * 	This function is used to print a character on screen.
- * 
+ *
  * Pre-Condition:
  * 	`c` is the character you want to print.
  */
@@ -24,8 +24,8 @@ void sys_putchar(int sysno, int c, int a2, int a3, int a4, int a5)
  * 	This function enables you to copy content of `srcaddr` to `destaddr`.
  *
  * Pre-Condition:
- * 	`destaddr` and `srcaddr` can't be NULL. Also, the `srcaddr` area 
- * 	shouldn't overlap the `destaddr`, otherwise the behavior of this 
+ * 	`destaddr` and `srcaddr` can't be NULL. Also, the `srcaddr` area
+ * 	shouldn't overlap the `destaddr`, otherwise the behavior of this
  * 	function is undefined.
  *
  * Post-Condition:
@@ -73,8 +73,8 @@ void sys_yield(void)
  * 	This function is used to destroy the current environment.
  *
  * Pre-Condition:
- * 	The parameter `envid` must be the environment id of a 
- * process, which is either a child of the caller of this function 
+ * 	The parameter `envid` must be the environment id of a
+ * process, which is either a child of the caller of this function
  * or the caller itself.
  *
  * Post-Condition:
@@ -100,7 +100,7 @@ int sys_env_destroy(int sysno, u_int envid)
 
 /* Overview:
  * 	Set envid's pagefault handler entry point and exception stack.
- * 
+ *
  * Pre-Condition:
  * 	xstacktop points one byte past exception stack.
  *
@@ -134,7 +134,7 @@ int sys_set_pgfault_handler(int sysno, u_int envid, u_int func, u_int xstacktop)
  *
  * 	If a page is already mapped at 'va', that page is unmapped as a
  * side-effect.
- * 
+ *
  * Pre-Condition:
  * perm -- PTE_V is required,
  *         PTE_COW is not allowed(return -E_INVAL),
@@ -319,7 +319,7 @@ int sys_env_alloc(void)
  * Pre-Condition:
  * 	status should be one of `ENV_RUNNABLE`, `ENV_NOT_RUNNABLE` and
  * `ENV_FREE`. Otherwise return -E_INVAL.
- * 
+ *
  * Post-Condition:
  * 	Returns 0 on success, < 0 on error.
  * 	Return -E_INVAL if status is not a valid status for an environment.
@@ -364,7 +364,7 @@ int sys_set_trapframe(int sysno, u_int envid, struct Trapframe *tf)
 }
 
 /* Overview:
- * 	Kernel panic with message `msg`. 
+ * 	Kernel panic with message `msg`.
  *
  * Pre-Condition:
  * 	msg can't be NULL
@@ -379,17 +379,17 @@ void sys_panic(int sysno, char *msg)
 }
 
 /* Overview:
- * 	This function enables caller to receive message from 
- * other process. To be more specific, it will flag 
- * the current process so that other process could send 
+ * 	This function enables caller to receive message from
+ * other process. To be more specific, it will flag
+ * the current process so that other process could send
  * message to it.
  *
  * Pre-Condition:
  * 	`dstva` is valid (Note: NULL is also a valid value for `dstva`).
- * 
+ *
  * Post-Condition:
- * 	This syscall will set the current process's status to 
- * ENV_NOT_RUNNABLE, giving up cpu. 
+ * 	This syscall will set the current process's status to
+ * ENV_NOT_RUNNABLE, giving up cpu.
  */
 void sys_ipc_recv(int sysno, u_int dstva)
 {
@@ -509,4 +509,3 @@ int sys_ipc_can_send(int sysno, u_int envid, u_int value, u_int srcva,
 	//	printf("sys_ipc_can_send:out\n");
 	return 0;
 }
-
