@@ -38,8 +38,8 @@ NESTED(handle_sys,TF_SIZE, sp)
     beqz	t2, illegal_syscall
     nop
     lw	    t0,TF_REG29(sp)
-    
-    //get the function parameters 
+
+    //get the function parameters
     lw	t1, (t0)
     lw	t3, 4(t0)
     lw	t4, 8(t0)
@@ -61,7 +61,7 @@ NESTED(handle_sys,TF_SIZE, sp)
     //go to exectue the syscall
     jalr	t2
     nop
-    
+
     //syscall finished , restore sp and v0
     addu	sp, 20
     sw	v0, TF_REG2(sp)
@@ -74,13 +74,13 @@ NESTED(handle_sys,TF_SIZE, sp)
     //error and loop
 illegal_syscall:
 
-    j illegal_syscall 
+    j illegal_syscall
     nop
 
 END(handle_sys)
 
 
-    
+
     .extern sys_putchar
     .extern sys_getenvid
     .extern sys_yield
@@ -101,7 +101,7 @@ END(handle_sys)
     //syscalltable stores all the syscall function's entrypoints
 
 .macro syscalltable
-   
+
     .word sys_putchar
     .word sys_getenvid
     .word sys_yield
@@ -116,9 +116,10 @@ END(handle_sys)
     .word sys_panic
     .word sys_ipc_can_send
     .word sys_ipc_recv
-       
+    .word sys_cgetc
+
 .endm
 EXPORT(sys_call_table)
 
     syscalltable
-.size sys_call_table, . - sys_call_table 
+.size sys_call_table, . - sys_call_table

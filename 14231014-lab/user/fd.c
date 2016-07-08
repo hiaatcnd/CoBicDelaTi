@@ -195,7 +195,7 @@ read(int fdnum, void *buf, u_int n)
 	}
 
 	if ((fd->fd_omode & O_ACCMODE) == O_WRONLY) {
-		writef("[%08x] read %d -- bad mode\n", env->env_id, fdnum);
+		//writef("[%08x] read %d -- bad mode\n", env->env_id, fdnum);
 		return -E_INVAL;
 	}
 
@@ -215,18 +215,18 @@ readn(int fdnum, void *buf, u_int n)
 
 	for (tot = 0; tot < n; tot += m) {
 		m = read(fdnum, (char *)buf + tot, n - tot);
-		writef("[%08x] read m = %d\n", env->env_id, m);
+		//writef("[%08x] read m = %d\n", env->env_id, m);
 		if (m < 0) {
-			writef("[%08x] readn RETURN m < 0 \n", env->env_id);
+			//writef("[%08x] readn RETURN m < 0 \n", env->env_id);
 			return m;
 		}
 
 		if (m == 0) {
-			writef("[%08x] readn RETURN m == 0 \n", env->env_id);
+			//writef("[%08x] readn RETURN m == 0 \n", env->env_id);
 			break;
 		}
 	}
-	writef("[%08x] readn RETURN tot = %d\n", env->env_id, tot);
+	//writef("[%08x] readn RETURN tot = %d\n", env->env_id, tot);
 	return tot;
 }
 

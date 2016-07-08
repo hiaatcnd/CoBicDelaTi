@@ -97,5 +97,10 @@ syscall_ipc_recv(u_int dstva)
 int
 syscall_cgetc()
 {
+	//int r;
+	//writef("ALEPH_DEBUG: syscall_cgetc is called!\n");
+	//r = msyscall(SYS_cgetc, 0, 0, 0, 0, 0);
+	//writef("%d",r);
+	//return r;
 	return msyscall(SYS_cgetc, 0, 0, 0, 0, 0);
 }

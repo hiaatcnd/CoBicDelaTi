@@ -51,7 +51,7 @@ int
 cons_read(struct Fd *fd, void *vbuf, u_int n, u_int offset)
 {
 	int c;
-
+	//writef("ALEPH_DEBUG: cons_read\n");
 	USED(offset);
 
 	//	printf("got into cons_read");
@@ -60,6 +60,7 @@ cons_read(struct Fd *fd, void *vbuf, u_int n, u_int offset)
 	}
 
 	while ((c = syscall_cgetc()) == 0) {
+		writef("cgetc fail: c = %c\n",c);
 		syscall_yield();
 	}
 
