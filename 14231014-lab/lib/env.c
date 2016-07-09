@@ -581,8 +581,8 @@ env_run(struct Env *e)
 
     /* Hint: if there is a environment running,you should do
     *  context switch.You can imitate env_destroy() 's behaviors.*/
-	printf("env_run e->env_pgdir[2] = %08x\n", (e->env_pgdir)[2]);
-	printf("env_run e->env_pgdir[2][0] = %08x\n", ((u_int *)KADDR((e->env_pgdir)[2]))[0]);
+	printf("env_run id: %d; e->env_pgdir[1] = %08x\n", e->env_id, (e->env_pgdir)[1]);
+	printf("env_run id: %d; e->env_pgdir[1][0] = %08x\n", e->env_id, ((u_int *)KADDR(PTE_ADDR((e->env_pgdir)[1])))[0]);
 	struct Trapframe  *old;
 	old = (struct Trapframe *)(TIMESTACK - sizeof(struct Trapframe));
 
@@ -592,7 +592,7 @@ env_run(struct Env *e)
 	}
     /*Step 2: Set 'curenv' to the new environment. */
 	curenv = e;
-
+	printf("env_run id: %d; e->env_tf.pc = %08x\n", e->env_id, e->env_tf.pc);
     /*Step 3: Use lcontext() to switch to its address space. */
     lcontext(KADDR(curenv->env_cr3));
 

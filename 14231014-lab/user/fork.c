@@ -194,7 +194,7 @@ fork(void)
 		return newenvid;
 	}
 
-	//writef("newenvid = %x\n",newenvid);
+	writef("newenvid = %x\n",newenvid);
 	if (newenvid == 0) {
 		//		writef("@@@@@@@ I'm child @@@@@@@\n");
 		env = &envs[ENVX(syscall_getenvid())];
@@ -230,25 +230,6 @@ fork(void)
 }
 
 // Challenge!
-static void
-sduppage(u_int envid, u_int pn)
-{
-	int r;
-	u_int addr;
-	u_int perm;
-
-	perm = (*vpt)[pn] & 0xfff;
-	addr = pn * BY2PG;
-
-	r = syscall_mem_map(0, addr, envid, addr, perm);
-	writef("--sduppage-- pn = %d; addr = %08x; perm = %08x; r = %d\n",pn,addr,perm,r);
-
-
-	return;
-	//	user_panic("duppage not implemented");
-}
-
-
 int
 sfork(void)
 {
@@ -265,12 +246,13 @@ sfork(void)
 		writef("sfork:no env can be alloced\n");
 		return newenvid;
 	}
-	writef("sfork:newenvid = %d\n",newenvid);
 
 	if (newenvid == 0) {
 		env = &envs[ENVX(syscall_getenvid())];
 		return 0;
 	}
+
+	writef("sfork:newenvid = %d\n",newenvid);
 
 	writef("sfork:duppage start va = %08x\n",UTOP - 2*PDMAP);
 	for (i = ((UTOP - 2*PDMAP) / BY2PG); i < (UTOP / BY2PG) - 1; i++) {

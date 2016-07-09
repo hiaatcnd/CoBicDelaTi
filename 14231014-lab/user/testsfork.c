@@ -7,8 +7,10 @@ umain(void)
   if(e!=0){
     writef("i am father. g = %d\n",g);
     g = 2;
+    syscall_yield();
   }
   else{
     writef("i am child. g = %d\n",g);
+    g++;
   }
 }

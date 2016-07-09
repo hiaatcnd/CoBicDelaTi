@@ -55,12 +55,16 @@ syscall_mem_unmap(u_int envid, u_int va)
 	return msyscall(SYS_mem_unmap, envid, va, 0, 0, 0);
 }
 
+static int sssss(){
+	writef("ALEPH : syscall_env_alloc\n");
+}
+
 int syscall_env_alloc(void)
 {
 
 	int a = msyscall(SYS_env_alloc, 0, 0, 0, 0, 0);
 	//writef("syscall_env_alloc(): return : %x\n",a);
-	writef("");
+	sssss();
 	return a;
 }
 
@@ -98,4 +102,5 @@ int
 syscall_s_env_alloc(u_int envid)
 {
 	return msyscall(SYS_s_env_alloc, envid, 0, 0, 0, 0);
+	writef("ALEPH : syscall_s_env_alloc\n");
 }

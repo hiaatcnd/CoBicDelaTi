@@ -296,7 +296,8 @@ int sys_env_alloc(void)
 	// Your code here.
 	int r;
 	struct Env *e;
-
+	struct Trapframe *TT;
+	TT =
 
 	if ((r = env_alloc(&e, curenv->env_id)) < 0) {
 		return r;
@@ -304,7 +305,8 @@ int sys_env_alloc(void)
 
 	bcopy(KERNEL_SP - sizeof(struct Trapframe), &e->env_tf,
 		  sizeof(struct Trapframe));
-	printf("sys_env_alloc():the child pc :%x", e->env_tf.cp0_epc);
+	//printf("sys_env_alloc():the child pc :%x", e->env_tf.cp0_epc);
+	printf("sys_env_alloc():the child pc = %x; ra = %x\n", e->env_tf.cp0_epc, e->env_tf.regs[31]);
 	e->env_tf.pc = e->env_tf.cp0_epc;
 	//e->env_tf.cp0_status = 0x1000000C;
 	e->env_status = ENV_NOT_RUNNABLE;
@@ -550,6 +552,7 @@ static int s_mem_map(int sysno, u_int srcid, u_int srcva, u_int dstid, u_int dst
 
 	//printf("sys_mem_map comes 6\n");
 	ppage->pp_ref++;
+	tlb_out(PTE_ADDR(round_dstva) | GET_ENV_ASID(dstid));
 	printf("round_srcva = %08x; round_dstva = %08x; ppage->pp_ref = %d\n",round_srcva,round_dstva,ppage->pp_ref);
 	//ret = page_insert(dstenv->env_pgdir, ppage, round_dstva, perm);
 	//printf("sys_mem_map comes 7\n");
@@ -578,7 +581,7 @@ int sys_s_env_alloc(u_int envid)
 
 	bcopy(KERNEL_SP - sizeof(struct Trapframe), &e->env_tf,
 		  sizeof(struct Trapframe));
-	printf("sys_env_alloc():the child pc :%x\n", e->env_tf.cp0_epc);
+	printf("sys_s_env_alloc():the child pc = %x; ra = %x\n", e->env_tf.cp0_epc, e->env_tf.regs[31]);
 	e->env_tf.pc = e->env_tf.cp0_epc;
 	//e->env_tf.cp0_status = 0x1000000C;
 	e->env_status = ENV_NOT_RUNNABLE;
@@ -589,14 +592,14 @@ int sys_s_env_alloc(u_int envid)
 		if((parent->env_pgdir)[i] != 0){
 			(e->env_pgdir)[i] = (parent->env_pgdir)[i];
 			r = s_mem_map(0, curenv->env_id, UVPT + i * BY2PG, e->env_id, UVPT + i * BY2PG, ((parent->env_pgdir)[i])&0xfff);
-			printf("s_setup 1: UVPT + i * BY2PG = %08x; pgdir[i] = %08x; (parent->env_pgdir)[i] = %08x; r = %d\n",UVPT + i * BY2PG,e->env_pgdir[i] ,(parent->env_pgdir)[i], r );
+			//printf("s_setup 1: UVPT + i * BY2PG = %08x; pgdir[i] = %08x; pgdir[i][0] = %08x; (parent->env_pgdir)[i] = %08x; r = %d\n", UVPT + i * BY2PG, e->env_pgdir[i], ((u_int *)KADDR(PTE_ADDR(e->env_pgdir[i])))[0], (parent->env_pgdir)[i], r );
 		}
 	}
 	//printf("!!!!!! PTX((UTOP - 2*PDMAP)) = %08x\n",PTX((UTOP - 2*PDMAP)) );
 	for (i = 0; i < (UTOP - 2*PDMAP)/BY2PG; i++) {
 		if (((u_int *)UVPD)[i / PTE2PT] != 0 && ((u_int *)UVPT)[i] != 0) {
 			s_mem_map(0, curenv->env_id, i * BY2PG, e->env_id, i * BY2PG, ((u_int *)UVPT)[i]&0xfff);
-			printf("s_setup 2: i * BY2PG = %08x; perm = %08x \n",i * BY2PG ,((u_int *)UVPT)[i]&0xfff);
+			//printf("s_setup 2: i * BY2PG = %08x; perm = %08x \n",i * BY2PG ,((u_int *)UVPT)[i]&0xfff);
 		}
 	}
 	/*
